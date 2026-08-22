@@ -1,0 +1,24 @@
+{
+  "schema_version": "aegisrun-candidate-strategy/v1",
+  "name": "稳健长线候选筛选",
+  "filters": {
+    "min_confidence": 65,
+    "min_candidate_score": 55,
+    "allowed_actions": ["buy", "add", "hold", "wait"],
+    "allowed_directions": ["bullish", "range"],
+    "require_buy_gate_open": true,
+    "include_industries": [],
+    "exclude_industries": ["房地产"],
+    "exclude_symbols": []
+  },
+  "ranking": {
+    "mode": "weighted",
+    "confidence_weight": 0.6,
+    "candidate_score_weight": 0.4,
+    "market_adjustment_weight": 0.5,
+    "macro_adjustment_weight": 0.2,
+    "preferred_industries": ["消费", "医药"],
+    "preferred_industry_bonus": 5
+  },
+  "max_results": 10
+}

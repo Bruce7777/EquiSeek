@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: equiseek
+      POSTGRES_USER: equiseek
+      POSTGRES_PASSWORD: equiseek
+    ports:
+      - "54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U equiseek -d equiseek"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment: &runtime-env
+      EQUISEEK_DATABASE_URL: postgresql+asyncpg://equiseek:equiseek@postgres:5432/equiseek
+      EQUISEEK_CHECKPOINT_URL: postgresql://equiseek:equiseek@postgres:5432/equiseek
+      EQUISEEK_AUTO_CREATE_SCHEMA: "false"
+      EQUISEEK_ARTIFACT_ROOT: /data/artifacts
+      EQUISEEK_WORKSPACE_ROOT: /data/workspaces
+      EQUISEEK_WORKSPACE_MAX_BYTES_PER_RUN: "536870912"
+      # Compose reference runs trusted demo code. Use a Docker-backed host worker for untrusted code.
+      EQUISEEK_SANDBOX_BACKEND: local
+      EQUISEEK_SANDBOX_NETWORK_ALLOWED: "false"
+      EQUISEEK_SANDBOX_MAX_OUTPUT_BYTES: "64000"
+      EQUISEEK_SANDBOX_MEMORY_LIMIT: 512m
+      EQUISEEK_SANDBOX_CPU_LIMIT: "1.0"
+      EQUISEEK_SANDBOX_PIDS_LIMIT: "128"
+      EQUISEEK_SANDBOX_REQUIRE_ISOLATION: "false"
+      EQUISEEK_SUBTASK_MAX_CONCURRENCY: "4"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: .
+    environment: *runtime-env
+    ports:
+      - "8000:8000"
+    volumes: &runtime-volume
+      - type: volume
+        source: runtime-data
+        target: /data
+        volume:
+          nocopy: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      runtime-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    build: .
+    command: ["equiseek", "worker"]
+    environment: *runtime-env
+    volumes: *runtime-volume
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      runtime-init:
+        condition: service_completed_successfully
+
+  runtime-init:
+    build: .
+    user: "0:0"
+    command: ["sh", "-c", "mkdir -p /data/artifacts /data/workspaces && chown -R 65532:65532 /data"]
+    volumes: *runtime-volume
+
+volumes:
+  postgres-data:
+  runtime-data:

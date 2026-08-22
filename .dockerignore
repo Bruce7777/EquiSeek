@@ -1,0 +1,11 @@
+.git
+.venv
+.aegisrun
+.equiseek
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__
+tests
+docs
+run-report.html

@@ -1,0 +1,24 @@
+{
+  "schema_version": "aegisrun-candidate-strategy/v1",
+  "name": "内置 MACD/WR 候选排序",
+  "filters": {
+    "min_confidence": 0,
+    "min_candidate_score": 0,
+    "allowed_actions": ["buy", "add", "hold", "wait"],
+    "allowed_directions": ["bullish", "bearish", "range"],
+    "require_buy_gate_open": false,
+    "include_industries": [],
+    "exclude_industries": [],
+    "exclude_symbols": []
+  },
+  "ranking": {
+    "mode": "legacy",
+    "confidence_weight": 1,
+    "candidate_score_weight": 1,
+    "market_adjustment_weight": 0,
+    "macro_adjustment_weight": 0,
+    "preferred_industries": [],
+    "preferred_industry_bonus": 0
+  },
+  "max_results": 50
+}

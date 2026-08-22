@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.9"
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen --all-extras
+      - run: python scripts/verify_readme_pair.py
+      - run: uv run ruff check .
+      - run: uv run mypy src
+      - run: uv run pytest -q --cov --cov-report=xml
+      - run: uv run pip-audit
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: equiseek
+          POSTGRES_USER: equiseek
+          POSTGRES_PASSWORD: equiseek
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U equiseek -d equiseek"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      EQUISEEK_TEST_POSTGRES_URL: postgresql+asyncpg://equiseek:equiseek@127.0.0.1:54329/equiseek
+      EQUISEEK_TEST_CHECKPOINT_URL: postgresql://equiseek:equiseek@127.0.0.1:54329/equiseek
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - run: uv sync --frozen --all-extras
+      - run: uv run pytest -m integration tests/integration/test_postgres.py -q
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t equiseek:${{ github.sha }} .
+      - run: docker build -f Dockerfile.sandbox -t equiseek-sandbox:${{ github.sha }} .
+      - uses: anchore/sbom-action@v0
+        with:
+          image: equiseek:${{ github.sha }}
+          output-file: sbom.spdx.json
+      - uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: equiseek:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"

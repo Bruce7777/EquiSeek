@@ -1,0 +1,115 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "equiseek"
+version = "0.1.0"
+description = "EquiSeek: a local-first AI investment research platform with a recoverable agent harness."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "EquiSeek Contributors" }]
+keywords = ["agent", "harness", "langgraph", "sandbox", "evaluation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "aiosqlite>=0.20,<1",
+  "alembic>=1.15,<2",
+  "docker>=7.1,<8",
+  "fastapi>=0.115,<1",
+  "httpx>=0.28,<1",
+  "jsonschema>=4.23,<5",
+  "langgraph>=1.0,<2",
+  "langgraph-checkpoint-sqlite>=3.0,<4",
+  "opentelemetry-api>=1.30,<2",
+  "opentelemetry-sdk>=1.30,<2",
+  "pypdf>=6.0,<7",
+  "pydantic-settings>=2.8,<3",
+  "pyyaml>=6,<7",
+  "python-json-logger>=3.2,<4",
+  "rich>=13.9,<15",
+  "sqlalchemy>=2.0,<2.1",
+  "typer>=0.15,<1",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+postgres = [
+  "asyncpg>=0.30,<1",
+  "langgraph-checkpoint-postgres>=3.0,<4",
+  "psycopg[binary,pool]>=3.2,<4",
+]
+desktop = [
+  "baostock>=0.9.3,<1",
+  "keyring>=25.6,<26",
+  "pyside6>=6.10,<6.12",
+]
+desktop-build = [
+  "pyinstaller>=6.15,<7",
+]
+dev = [
+  "mypy>=1.15,<2",
+  "pip-audit>=2.8,<3",
+  "pytest>=9.0.3,<10",
+  "pytest-asyncio>=0.25,<2",
+  "pytest-cov>=6,<8",
+  "ruff>=0.9,<1",
+  "testcontainers[postgres]>=4.9,<5",
+  "types-jsonschema>=4.23,<5",
+  "types-pyyaml>=6,<7",
+  "types-docker>=7.1,<8",
+]
+
+[project.scripts]
+aegisrun = "aegisrun.cli:app"
+aegisrun-desktop = "aegisrun.desktop.app:main"
+aegisrun-sidecar = "aegisrun.sidecar.server:main"
+equiseek = "aegisrun.cli:app"
+equiseek-desktop = "aegisrun.desktop.app:main"
+equiseek-sidecar = "aegisrun.sidecar.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aegisrun"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+  "integration: optional PostgreSQL multi-worker compatibility suite",
+  "fault: process failure injection",
+  "security: security boundary tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["aegisrun"]
+omit = [
+  "src/aegisrun/cli.py",
+  "src/aegisrun/desktop/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+packages = ["aegisrun"]

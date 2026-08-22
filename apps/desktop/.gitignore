@@ -1,0 +1,7 @@
+node_modules/
+.vite/
+dist/
+dist-renderer/
+out/
+coverage/
+*.log

@@ -1,0 +1,67 @@
+name: desktop
+
+on:
+  push:
+    branches: [main, dev, "feature_*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-14
+            artifact: EquiSeek-macOS
+          - name: Windows
+            os: windows-2022
+            artifact: EquiSeek-Windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.9"
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - run: uv python install 3.12
+      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: npm ci --prefix apps/desktop
+      - run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+      - run: npm --prefix apps/desktop run lint
+      - run: npm --prefix apps/desktop run typecheck
+      - run: npm --prefix apps/desktop run test
+      - run: uv run pyinstaller --noconfirm --clean --distpath ../dist --workpath ../build EquiSeekSidecar.spec
+        working-directory: packaging
+      - name: Verify frozen sidecar (macOS)
+        if: runner.os == 'macOS'
+        run: dist/equiseek-sidecar --self-test
+      - name: Verify frozen sidecar (Windows)
+        if: runner.os == 'Windows'
+        run: dist\equiseek-sidecar.exe --self-test
+      - run: npm --prefix apps/desktop run make
+      - name: Verify packaged sidecar (macOS)
+        if: runner.os == 'macOS'
+        run: find apps/desktop/out -path '*/Contents/Resources/equiseek-sidecar' -type f -exec {} --self-test \;
+      - name: Verify packaged sidecar (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sidecar = Get-ChildItem apps/desktop/out -Recurse -Filter equiseek-sidecar.exe | Select-Object -First 1
+          if (-not $sidecar) { throw "Packaged sidecar was not found" }
+          & $sidecar.FullName --self-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: apps/desktop/out/make/**/*.zip
+          if-no-files-found: error
