@@ -130,7 +130,7 @@ jobs:
           xcrun stapler validate "$app_path"
           spctl --assess --type execute --verbose=2 "$app_path"
           find apps/desktop/out/make -type f -exec shasum -a 256 {} \; | sort > apps/desktop/out/make/SHA256SUMS
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: EquiSeek-macOS-${{ matrix.arch }}-signed
           path: apps/desktop/out/make/**/*
@@ -196,7 +196,7 @@ jobs:
             $hash = Get-FileHash $_.FullName -Algorithm SHA256
             "$($hash.Hash.ToLower())  $($_.FullName.Substring((Resolve-Path apps/desktop/out/make).Path.Length + 1))"
           } | Sort-Object | Out-File apps/desktop/out/make/SHA256SUMS -Encoding ascii
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: EquiSeek-Windows-x64-signed
           path: apps/desktop/out/make/**/*
