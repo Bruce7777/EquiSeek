@@ -14,6 +14,7 @@
 
 - 投研助手：持久会话、Markdown/HTML 成果、附件、Goal、Plan、子智能体和运行 Trace。
 - 个股研究：本地计算 MA、MACD、KDJ、RSI、ATR、BOLL 和 WR 指标，提供多周期规则、行情时效、触发条件、失效条件和可追溯报告。
+- 决策账本：成功的个股研究结论保存在本机并可随时回看；可选择用同源收盘价跟踪后续变化，且明确标注为假设结果而非真实交易业绩。
 - 宏观研究：发现并核验官方发布，通过时效门禁后才更新资本流向、成本转嫁、配置或行业结论。
 - 持仓与自选：通过界面或投研助手查询和维护本地持仓、自选与候选标的。
 - 工作区与 Skill：在用户明确选择的工作区内使用持久 Shell 和受权限控制的文件工具；可以查看、启停、覆盖或扩展内置 Skill。
@@ -26,7 +27,7 @@
 | --- | --- | --- |
 | 启动当前桌面应用 | `make desktop-install && make desktop` | 否 |
 | 构建当前桌面应用 | `make desktop-build` | 否 |
-| 生成桌面 ZIP | `make desktop-package` | 否 |
+| 生成当前平台桌面包 | `make desktop-package` | 否 |
 | 启动本地 API 与 Worker | `make local-api` / `make local-worker` | 否，默认 SQLite |
 | 运行本地 Harness 演示 | `make bootstrap && make demo-fake` | 否 |
 | 运行多 Worker 部署 | `make up` | 是，由 Docker Compose 启动 |
@@ -45,7 +46,7 @@
 macOS 或 Linux：
 
 ```bash
-git clone <your-equiseek-repository>
+git clone https://github.com/Bruce7777/EquiSeek.git
 cd EquiSeek
 make desktop-install
 make desktop
@@ -80,13 +81,13 @@ make desktop-build
 apps/desktop/out/EquiSeek-darwin-*/EquiSeek.app
 ```
 
-生成便于分发的 ZIP：
+生成当前平台的未签名测试包：
 
 ```bash
 make desktop-package
 ```
 
-ZIP 位于 `apps/desktop/out/make/`。PyInstaller sidecar 与 Electron 应用必须在目标操作系统上原生构建；公开发布前还应完成 macOS 和 Windows 代码签名。
+产物位于 `apps/desktop/out/make/`：macOS 本地无证书构建为未签名 ZIP，Windows 为未签名 Squirrel Setup.exe。PyInstaller sidecar 与 Electron 应用必须在目标架构上原生构建。正式发布使用手动签名工作流，macOS 增加签名 PKG + ZIP、Windows 生成签名 Squirrel 产物，并必须通过签名、公证、许可证包、SBOM 与校验和门禁；详见[桌面发布签名](docs/releasing-desktop.md)。
 
 也可以不使用 Make：
 

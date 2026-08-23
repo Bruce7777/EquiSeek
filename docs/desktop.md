@@ -13,17 +13,23 @@ make desktop-install
 make desktop
 ```
 
-默认股票为 `600519.SH`。也支持 `600519`、`000001.SZ` 等形式；北交所 `.BJ` 代码通过 Tushare 查询。至少选择覆盖 30 个交易日的日期范围。
+默认股票为 `600050.SH`。Electron 研究页接受 `600519.SH`、`000001.SZ` 和 `.BJ` 形式；北交所行情需使用 Tushare。
 
 ## 数据源
 
 - `公开历史数据（BaoStock，无需账号）`：默认，无 Token，沪深真实历史数据；依赖上游网络和服务可用性。
-- `Tushare 真实行情`：可选，需要与 DeepSeek Key 完全独立的 Tushare Token；在“连接设置”中保存，或设置 `TUSHARE_TOKEN`。
+- `Tushare 真实行情`：可选，需要与 DeepSeek Key 完全独立的 Tushare Token；在 Electron“设置”中保存。
 - `离线模拟数据`：无需网络，不是任何真实证券；用于体验和测试。
 
 如果选择 Tushare 但尚未配置它自己的 Token，客户端会解释 DeepSeek Key 与行情凭据的区别，并让用户改选 BaoStock 或离线模拟，而不是直接终止分析。北交所真实行情仍需支持该数据的行情源；离线模拟不能作为真实行情替代品。
 
 复权可选不复权、前复权和后复权。同一报告会显示来源、截止日期、复权、样本数和指标公式版本。
+
+## 决策账本
+
+完成的个股研究会写入本机 `run-history.json`，研究页左侧“决策账本”可以回看当时的动作、参考收盘价、数据截止日与完整报告。联网打开研究页或手动刷新时，应用会按原行情源、证券代码和复权方式读取最新收盘价；Tushare 记录继续由 Electron 主进程从系统凭据仓临时注入 Token，Token 不会写进账本或报告。
+
+账本中的“假设结果”只描述规则动作从当时参考价到最新同口径收盘价的方向变化；等待动作只显示价格变化，防守动作显示规避下跌的反向效果。它不代表用户真实下单、成交价格、交易成本或账户收益。离线模拟记录不会伪装成真实市场表现，行情刷新失败时保留上次结果并显示异常原因。
 
 真实行情默认保存在 `~/.equiseek/user-data/market-data.sqlite3`。缓存主键为
 `source + symbol + adjustment + trade_date`，BaoStock 与 Tushare、前/后/不复权数据绝不
@@ -130,10 +136,10 @@ cp -R examples/user-skills/steady-long-term ~/.equiseek/user-data/skills/
 ```bash
 make desktop-smoke       # sidecar self-test + Electron lint/typecheck/Vitest
 make desktop-build       # 当前平台未签名解包应用
-make desktop-package     # 当前平台 ZIP，位于 apps/desktop/out/make/
+make desktop-package     # macOS 未签名 ZIP / Windows 未签名 Squirrel，位于 apps/desktop/out/make/
 ```
 
-PyInstaller sidecar 和 Electron 产物必须在目标系统原生构建。`desktop-package` 和 GitHub Actions 会冻结 Python sidecar、执行其自检，再把它作为 Electron Resource 打进应用。GitHub Actions 的 `desktop.yml` 分别在 macOS 14 和 Windows Server 2022 生成当前客户端 ZIP。公开发布前还需要平台代码签名；本地构建是未签名测试版。
+PyInstaller sidecar 和 Electron 产物必须在目标架构原生构建。`desktop-package` 和 GitHub Actions 会冻结 Python sidecar、执行其自检，再把它作为 Electron Resource 打进应用。普通 `desktop.yml` 覆盖 macOS arm64、macOS x64 和 Windows x64 的未签名安装验证；手动 `desktop-signed.yml` 使用受保护的 release environment 生成并验证签名产物。证书配置与发布门禁见 [releasing-desktop.md](releasing-desktop.md)。
 
 旧 Qt 客户端的回归和打包命令统一使用 `desktop-legacy-*` 前缀，详见项目主 [README](../README.md#旧-qt-客户端)。
 

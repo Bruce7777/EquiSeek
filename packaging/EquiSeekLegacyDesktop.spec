@@ -74,11 +74,11 @@ if sys.platform == "darwin":
         application_files,
         name="EquiSeek Legacy.app",
         icon=None,
-        version="0.1.0",
+        version="0.2.0",
         bundle_identifier="ai.equiseek.legacy",
         info_plist={
             "CFBundleDisplayName": "EquiSeek Legacy",
-            "CFBundleVersion": "0.1.0",
+            "CFBundleVersion": "0.2.0",
             "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "12.0",
         },

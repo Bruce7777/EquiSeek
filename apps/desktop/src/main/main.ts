@@ -2,6 +2,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { lstat } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron';
+import squirrelStartup from 'electron-squirrel-startup';
 import { SidecarSupervisor } from './sidecar';
 import { CredentialStore, type CredentialName } from './credentials';
 
@@ -14,6 +15,8 @@ const attachmentGrants = new Map<string, { path: string; expiresAt: number }>();
 let mainWindow: BrowserWindow | null = null;
 
 app.enableSandbox();
+if (squirrelStartup) app.quit();
+app.setAppUserModelId('ai.equiseek.research');
 if (!app.requestSingleInstanceLock()) app.quit();
 
 function trustedSender(event: Electron.IpcMainInvokeEvent): boolean {
@@ -41,7 +44,22 @@ function registerIpc(): void {
   handle('aegisrun:workspace:list', 'workspace.list');
   handle('aegisrun:workspace:add', 'workspace.add');
   handle('aegisrun:workspace:select', 'workspace.select');
-  handle('aegisrun:research:start', 'research.start');
+  ipcMain.handle('aegisrun:research:start', async (event, input: Record<string, unknown> = {}) => {
+    if (!trustedSender(event)) throw new Error('IPC sender rejected');
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('IPC params must be an object');
+    return sidecar.request('research.start', {
+      ...input,
+      tushareToken: input.source === 'tushare' ? await credentialStore.get('tushare') : undefined,
+    });
+  });
+  ipcMain.handle('aegisrun:research:history', async (event, input: Record<string, unknown> = {}) => {
+    if (!trustedSender(event)) throw new Error('IPC sender rejected');
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('IPC params must be an object');
+    return sidecar.request('research.history', {
+      ...input,
+      tushareToken: await credentialStore.get('tushare'),
+    }, 120_000);
+  });
   ipcMain.handle('aegisrun:agent:start', async (event, input: Record<string, unknown> = {}) => {
     if (!trustedSender(event)) throw new Error('IPC sender rejected');
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('IPC params must be an object');
@@ -57,6 +75,7 @@ function registerIpc(): void {
       ...input,
       attachments,
       deepseekApiKey: await credentialStore.get(input.modelProvider === 'openai-compatible' ? 'custom' : 'deepseek'),
+      tushareToken: await credentialStore.get('tushare'),
     });
   });
   handle('aegisrun:macro:start', 'macro.start', 120_000);
@@ -85,14 +104,14 @@ function registerIpc(): void {
   ipcMain.handle('aegisrun:credentials:set', async (event, input: { name?: unknown; value?: unknown }) => {
     if (!trustedSender(event)) throw new Error('IPC sender rejected');
     const name = String(input?.name || '') as CredentialName;
-    if (!['deepseek', 'custom'].includes(name)) throw new Error('未知凭据类型');
+    if (!['deepseek', 'custom', 'tushare'].includes(name)) throw new Error('未知凭据类型');
     await credentialStore.set(name, String(input?.value || ''));
     return credentialStore.status();
   });
   ipcMain.handle('aegisrun:credentials:clear', async (event, input: { name?: unknown }) => {
     if (!trustedSender(event)) throw new Error('IPC sender rejected');
     const name = String(input?.name || '') as CredentialName;
-    if (!['deepseek', 'custom'].includes(name)) throw new Error('未知凭据类型');
+    if (!['deepseek', 'custom', 'tushare'].includes(name)) throw new Error('未知凭据类型');
     await credentialStore.clear(name);
     return credentialStore.status();
   });

@@ -14,6 +14,7 @@ The current desktop product is the light-themed Electron application under `apps
 
 - Research assistant: persistent conversations, Markdown/HTML artifacts, attachments, Goals, Plans, sub-agents, and run traces.
 - Stock research: locally calculated MA, MACD, KDJ, RSI, ATR, BOLL, and WR indicators, with multi-timeframe rules, data freshness, triggers, invalidation conditions, and traceable reports.
+- Decision journal: successful stock-research conclusions remain local and replayable, with optional same-source closing-price follow-up clearly labeled as hypothetical rather than actual trading performance.
 - Macro research: discovery and verification of official releases, with freshness gates before capital-flow, cost-transfer, allocation, or sector conclusions are updated.
 - Portfolio and watchlist: query and maintain local positions and candidates through either the interface or the research assistant.
 - Workspaces and Skills: persistent shell and permission-controlled file tools inside an explicitly selected workspace; built-in Skills can be viewed, enabled, overridden, or extended.
@@ -26,7 +27,7 @@ The current desktop product is the light-themed Electron application under `apps
 | --- | --- | --- |
 | Start the current desktop app | `make desktop-install && make desktop` | No |
 | Build the current desktop app | `make desktop-build` | No |
-| Create a desktop ZIP | `make desktop-package` | No |
+| Create current-platform desktop packages | `make desktop-package` | No |
 | Start the local API and worker | `make local-api` / `make local-worker` | No, SQLite by default |
 | Run the local harness demo | `make bootstrap && make demo-fake` | No |
 | Run a multi-worker deployment | `make up` | Yes, started by Docker Compose |
@@ -45,7 +46,7 @@ The current desktop product is the light-themed Electron application under `apps
 On macOS or Linux:
 
 ```bash
-git clone <your-equiseek-repository>
+git clone https://github.com/Bruce7777/EquiSeek.git
 cd EquiSeek
 make desktop-install
 make desktop
@@ -80,13 +81,13 @@ Build output is written to `apps/desktop/out/`. A typical macOS path is:
 apps/desktop/out/EquiSeek-darwin-*/EquiSeek.app
 ```
 
-Create a distributable ZIP:
+Create the current platform's unsigned test packages:
 
 ```bash
 make desktop-package
 ```
 
-The ZIP is written under `apps/desktop/out/make/`. The PyInstaller sidecar and Electron app must be built natively on each target operating system. Public releases should also be code-signed for macOS and Windows.
+Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS and an unsigned Squirrel Setup.exe on Windows. The PyInstaller sidecar and Electron app must be built natively on each target architecture. Formal releases use the manual signed workflow to add a signed PKG + ZIP on macOS and signed Squirrel artifacts on Windows, and must pass signature, notarization, license-bundle, SBOM, and checksum gates; see [Desktop release signing](docs/releasing-desktop.md).
 
 To build without Make:
 

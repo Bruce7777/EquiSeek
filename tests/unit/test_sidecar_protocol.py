@@ -61,6 +61,7 @@ async def test_dispatcher_exposes_health_and_capabilities() -> None:
     assert capabilities["methods"][:2] == ["system.health", "system.capabilities"]
     assert "system.bootstrap" in capabilities["methods"]
     assert "research.start" in capabilities["methods"]
+    assert "research.history" in capabilities["methods"]
     assert "agent.start" in capabilities["methods"]
     assert "run.cancel" in capabilities["methods"]
     assert capabilities["events"] == ["run.event"]

@@ -93,5 +93,12 @@ async def test_run_registry_persists_completed_history_for_replay(tmp_path) -> N
     }
     assert restored.list_recent()[0]["runId"] == run.run_id
 
-    restored.delete(run.run_id)
-    assert restored.list_recent() == []
+    restored.update_result(
+        run.run_id,
+        {"kind": "research", "symbol": "600050.SH", "outcome": {"status": "profit"}},
+    )
+    reloaded = RunRegistry(history_path=history)
+    assert reloaded.get(run.run_id).result["outcome"] == {"status": "profit"}
+
+    reloaded.delete(run.run_id)
+    assert reloaded.list_recent() == []

@@ -208,6 +208,22 @@ const researchResult = (symbol: string, source = 'baostock'): Record<string, unk
 - ATR 区间不是目标价或收益承诺。
 - 系统不会连接券商或自动下单。`,
     answerMode: 'local',
+    outcome: {
+      schema_version: 1,
+      status: isDemo ? 'demo' : 'observing',
+      status_label: isDemo ? '演示记录' : '未执行',
+      action: 'wait',
+      action_label: '等待',
+      baseline_price: 4.28,
+      baseline_as_of: '2026-08-20',
+      latest_price: isDemo ? 4.28 : 4.35,
+      latest_as_of: isDemo ? '2026-08-20' : '2026-08-22',
+      price_change_pct: isDemo ? 0 : 1.64,
+      decision_return_pct: null,
+      trading_days: isDemo ? 0 : 2,
+      is_real_market_data: !isDemo,
+      methodology: isDemo ? '离线合成数据仅用于界面演示，不计算真实市场表现。' : '等待决策未假设成交，仅跟踪研究后价格变化。',
+    },
     trace: [
       { stage: 'research-task', title: '加载并校验行情数据', status: 'succeeded', summary: `${source} · 截止 2026-08-20 · 645 根日 K`, agent_name: 'market-data-agent', skill_names: ['a-share-market-data'] },
       { stage: 'research-task', title: '本地计算完整技术指标', status: 'succeeded', summary: 'MA、MACD、KDJ、RSI、ATR、BOLL、WR', agent_name: 'indicator-agent', skill_names: ['technical-indicators'] },
@@ -493,7 +509,7 @@ const bootstrap: BootstrapData = {
   recentRuns: [],
   conversations: [],
   runtime: { mode: 'browser-fixture', database: 'SQLite + JSON', loginRequired: false, networkDefault: true },
-  credentials: { deepseek: false, custom: false },
+  credentials: { deepseek: false, custom: false, tushare: false },
 };
 
 const browserApi: DesktopApi = {
@@ -520,9 +536,9 @@ const browserApi: DesktopApi = {
     },
   },
   credentials: {
-    status: async () => bootstrap.credentials || { deepseek: false, custom: false },
-    set: async (name) => { bootstrap.credentials = { ...(bootstrap.credentials || { deepseek: false, custom: false }), [name]: true }; return bootstrap.credentials; },
-    clear: async (name) => { bootstrap.credentials = { ...(bootstrap.credentials || { deepseek: false, custom: false }), [name]: false }; return bootstrap.credentials; },
+    status: async () => bootstrap.credentials || { deepseek: false, custom: false, tushare: false },
+    set: async (name) => { bootstrap.credentials = { ...(bootstrap.credentials || { deepseek: false, custom: false, tushare: false }), [name]: true }; return bootstrap.credentials; },
+    clear: async (name) => { bootstrap.credentials = { ...(bootstrap.credentials || { deepseek: false, custom: false, tushare: false }), [name]: false }; return bootstrap.credentials; },
   },
   skills: {
     list: async () => ({ items: bootstrap.skills }),
@@ -536,7 +552,13 @@ const browserApi: DesktopApi = {
     importFile: async () => null,
     openRoot: async () => '',
   },
-  research: { start: async (input) => start('research', input) },
+  research: {
+    start: async (input) => start('research', input),
+    history: async (input = {}) => ({
+      items: [...runs.values()].filter((run) => run.kind === 'research' && run.status === 'succeeded').reverse().map((run) => structuredClone(run)),
+      refreshed: Boolean(input.refresh),
+    }),
+  },
   agent: { start: async (input) => {
     const threadId = String(input.threadId || 'browser-default');
     const state = conversations.get(threadId);

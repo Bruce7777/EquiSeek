@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     workspace_root: Path = Path(".equiseek/workspaces")
     workspace_max_bytes_per_run: int = 512 * 1024 * 1024
     sandbox_backend: str = "local"
-    sandbox_image: str = "equiseek-sandbox:0.1.0"
+    sandbox_image: str = "equiseek-sandbox:0.2.0"
     sandbox_network_allowed: bool = False
     sandbox_max_output_bytes: int = 64_000
     sandbox_memory_limit: str = "512m"

@@ -16,20 +16,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: macOS
+          - name: macOS Apple Silicon
             os: macos-14
-            artifact: EquiSeek-macOS
-          - name: Windows
+            arch: arm64
+            artifact: EquiSeek-macOS-arm64-unsigned
+          - name: macOS Intel
+            os: macos-15-intel
+            arch: x64
+            artifact: EquiSeek-macOS-x64-unsigned
+          - name: Windows x64
             os: windows-2022
-            artifact: EquiSeek-Windows
+            arch: x64
+            artifact: EquiSeek-Windows-x64-unsigned
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           version: "0.10.9"
           enable-cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "24"
           cache: npm
@@ -41,6 +47,8 @@ jobs:
       - run: npm --prefix apps/desktop run lint
       - run: npm --prefix apps/desktop run typecheck
       - run: npm --prefix apps/desktop run test
+      - run: npm --prefix apps/desktop audit --audit-level=high
+      - run: uv run pip-audit
       - run: uv run pyinstaller --noconfirm --clean --distpath ../dist --workpath ../build EquiSeekSidecar.spec
         working-directory: packaging
       - name: Verify frozen sidecar (macOS)
@@ -49,7 +57,7 @@ jobs:
       - name: Verify frozen sidecar (Windows)
         if: runner.os == 'Windows'
         run: dist\equiseek-sidecar.exe --self-test
-      - run: npm --prefix apps/desktop run make
+      - run: npm --prefix apps/desktop run make -- --arch=${{ matrix.arch }}
       - name: Verify packaged sidecar (macOS)
         if: runner.os == 'macOS'
         run: find apps/desktop/out -path '*/Contents/Resources/equiseek-sidecar' -type f -exec {} --self-test \;
@@ -60,8 +68,16 @@ jobs:
           $sidecar = Get-ChildItem apps/desktop/out -Recurse -Filter equiseek-sidecar.exe | Select-Object -First 1
           if (-not $sidecar) { throw "Packaged sidecar was not found" }
           & $sidecar.FullName --self-test
-      - uses: actions/upload-artifact@v4
+      - name: Verify embedded compliance bundle
+        shell: bash
+        run: |
+          test -f build/release-compliance/LICENSE
+          test -f build/release-compliance/THIRD_PARTY_LICENSE_INDEX.json
+          test -f build/release-compliance/sbom-python.cdx.json
+          test -f build/release-compliance/sbom-electron.cdx.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.artifact }}
-          path: apps/desktop/out/make/**/*.zip
+          path: apps/desktop/out/make/**/*
           if-no-files-found: error
+          retention-days: 7

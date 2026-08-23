@@ -502,22 +502,30 @@ td button:hover { color: var(--red); }
 .agent-conversation-main { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0,1fr) auto; padding: 0 clamp(22px,3vw,48px); }
 .thread-loading { height: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; color: #7a807b; font-size: 10px; }
 
-.research-shell { display: grid; grid-template-columns: 205px minmax(0,1fr); gap: 15px; align-items: start; }
+.research-shell { display: grid; grid-template-columns: 284px minmax(0,1fr); gap: 17px; align-items: start; }
 .research-current { min-width: 0; }
-.research-history { position: sticky; top: 0; max-height: calc(100vh - 150px); overflow: hidden; padding: 12px; background: #f4f3ef; border: 1px solid var(--line-soft); border-radius: 14px; }
-.history-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 3px 9px; }.history-heading h2 { margin: 3px 0 0; font-size: 13px; }.history-heading > span { min-width: 23px; height: 23px; display: grid; place-items: center; color: #5d6b65; background: #e5e8e3; border-radius: 7px; font-size: 9px; }
-.history-list { max-height: calc(100vh - 215px); overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.research-history { position: sticky; top: 0; max-height: calc(100vh - 150px); overflow: hidden; padding: 13px; background: linear-gradient(155deg,#f5f4ef 0%,#efeee8 100%); border: 1px solid #dcd9d0; border-radius: 15px; box-shadow: 0 10px 30px rgba(48,51,45,.035); }
+.history-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 3px 7px; }.history-heading h2 { margin: 3px 0 0; font-size: 14px; letter-spacing: -.015em; }
+.history-heading-actions { display: flex; align-items: center; gap: 5px; }.history-heading-actions > span { min-width: 23px; height: 23px; display: grid; place-items: center; color: #5d6b65; background: #e3e6e1; border-radius: 7px; font-size: 9px; }.history-heading-actions button { width: 27px; height: 27px; display: grid; place-items: center; color: #54675e; background: #fff; border: 1px solid #d8dcd7; border-radius: 8px; transition: color .18s, border-color .18s, background .18s; }.history-heading-actions button:hover { color: var(--green); border-color: #aebfb6; background: #f8fbf9; }.history-heading-actions button:disabled { opacity: .55; cursor: default; }
+.journal-disclaimer, .journal-warning { margin: 0 3px 10px; color: #7b817c; font-size: 8px; line-height: 1.5; }.journal-warning { padding: 7px 8px; color: #8a5a28; background: #fff7e9; border: 1px solid #ead8b8; border-radius: 8px; }
+.history-list { max-height: calc(100vh - 262px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 1px; }
 .history-item { position: relative; background: #fff; border: 1px solid #e2e0d9; border-radius: 10px; }
-.history-item > button:first-child { width: 100%; padding: 10px 29px 9px 10px; display: flex; flex-direction: column; gap: 4px; background: transparent; border: 0; text-align: left; }.history-item strong { color: #303a35; font-size: 11px; }.history-item span { color: #65716b; font-size: 8px; }.history-item small { color: #9a9d98; font-size: 7px; }
-.history-item:hover { border-color: #bfcfc7; box-shadow: 0 5px 13px rgba(40,61,51,.05); }
+.history-item > button:first-child { width: 100%; padding: 11px 31px 10px 11px; display: flex; flex-direction: column; gap: 7px; background: transparent; border: 0; text-align: left; }.history-item strong { color: #303a35; font-size: 11px; }.history-item span { color: #65716b; font-size: 8px; }.history-item small { color: #929791; font-size: 7px; }
+.history-item:hover, .history-item.selected { border-color: #acc6ba; box-shadow: 0 6px 16px rgba(40,61,51,.06); }.history-item.selected { background: linear-gradient(150deg,#fff,#f5faf7); }
 .history-delete { position: absolute; right: 5px; top: 6px; width: 23px; height: 23px; display: grid; place-items: center; color: #a19c97; background: transparent; border: 0; border-radius: 6px; }.history-delete:hover { color: #a4463e; background: #f8eae8; }
 .history-empty { margin: 2px; padding: 12px 7px; color: #858984; font-size: 8px; line-height: 1.55; text-align: center; }
+.journal-item-top { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }.journal-item-top strong { font-size: 12px; letter-spacing: .01em; }
+.outcome-badge { flex: none; padding: 4px 7px; border: 1px solid #deded8; border-radius: 99px; color: #686c67 !important; background: #f1f1ed; font-size: 7px !important; font-weight: 700; letter-spacing: .03em; }.outcome-badge.profit { color: #126147 !important; border-color: #b9ddcc; background: #e9f6ef; }.outcome-badge.loss { color: #9b423b !important; border-color: #ecc4c0; background: #fcedeb; }.outcome-badge.pending, .outcome-badge.observing { color: #8b5c21 !important; border-color: #ead5b0; background: #fcf4e5; }.outcome-badge.demo, .outcome-badge.unavailable { color: #566879 !important; border-color: #cfdae3; background: #edf3f7; }
+.journal-decision { color: #7c817c !important; }.journal-decision b { color: #344c40; font-size: 9px; }
+.journal-prices { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0; overflow: hidden; background: #e6e6e0; border: 1px solid #e4e4de; border-radius: 8px; }.journal-prices > div { padding: 7px 8px; display: flex; flex-direction: column; gap: 2px; background: #f8f8f5; }.journal-prices dt { color: #939790; font-size: 7px; }.journal-prices dd { margin: 0; color: #3c4640; font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.journal-result { width: 100%; display: flex; align-items: baseline; justify-content: space-between; }.journal-result > span { color: #8b8f89; }.journal-result > strong { color: #59615c; font-size: 13px; font-variant-numeric: tabular-nums; }.journal-result > strong.positive { color: #14704f; }.journal-result > strong.negative { color: #aa453e; }
 
 @media (max-width: 1280px) {
   .agent-workbench { grid-template-columns: 178px minmax(0,1fr); }
   .research-shell { grid-template-columns: 1fr; }
   .research-history { position: static; max-height: none; }
   .history-list { max-height: none; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); overflow: visible; }
+  .journal-disclaimer { max-width: 620px; }
 }
 @media (max-width: 980px) {
   .agent-workbench { grid-template-columns: 150px minmax(0,1fr); }

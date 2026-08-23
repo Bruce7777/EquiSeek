@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import date, timedelta
+from types import SimpleNamespace
 
 import pytest
 
+import aegisrun.sidecar.dispatcher as dispatcher_module
 from aegisrun.sidecar.dispatcher import SidecarDispatcher
 from aegisrun.sidecar.local_state import LocalSettingsStore, user_data_root
 from aegisrun.sidecar.protocol import RpcRequest
+from aegisrun.sidecar.runs import RunRegistry
 
 
 def test_fresh_desktop_defaults_to_online_public_market_data(tmp_path) -> None:
@@ -63,6 +67,14 @@ def test_explicit_v2_offline_choice_is_preserved(tmp_path) -> None:
     assert settings["dataSource"] == "demo"
 
 
+def test_settings_accept_tushare_and_reject_unknown_market_source(tmp_path) -> None:
+    store = LocalSettingsStore(tmp_path / "settings.json")
+
+    assert store.patch({"dataSource": "tushare"})["dataSource"] == "tushare"
+    with pytest.raises(ValueError, match="dataSource"):
+        store.patch({"dataSource": "unknown"})
+
+
 def test_legacy_deepseek_aliases_migrate_to_supported_v4_flash(tmp_path) -> None:
     path = tmp_path / "settings.json"
     path.write_text(
@@ -114,6 +126,115 @@ def test_sidecar_keeps_portfolio_and_default_workspace_in_its_local_data_root(
 
     assert dispatcher.portfolio.path == tmp_path / "portfolio.json"
     assert dispatcher._workspaces()[0]["path"] == str(tmp_path / "investment-agent-workspaces")
+
+
+async def test_research_history_backfills_a_durable_pending_outcome(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("EQUISEEK_USER_DATA_ROOT", str(tmp_path))
+    registry = RunRegistry(history_path=tmp_path / "run-history.json")
+
+    async def execute(_report):  # type: ignore[no-untyped-def]
+        return {
+            "kind": "research",
+            "symbol": "600050.SH",
+            "source": "baostock",
+            "sourceKind": "public-history",
+            "adjustment": "qfq",
+            "asOf": "2026-08-20",
+            "advice": {
+                "action": "buy",
+                "action_label": "买入",
+                "current_price": 10.0,
+                "as_of": "2026-08-20",
+            },
+        }
+
+    run = registry.start("research", execute)
+    assert run.task is not None
+    await run.task
+    dispatcher = SidecarDispatcher(runs=registry)
+
+    response = await dispatcher.dispatch(
+        RpcRequest("history", "research.history", {"refresh": False}, "1.0")
+    )
+
+    assert response["items"][0]["result"]["outcome"]["status"] == "pending"
+    restored = RunRegistry(history_path=tmp_path / "run-history.json")
+    assert restored.get(run.run_id).result["outcome"]["baseline_price"] == 10.0
+
+
+async def test_research_history_forwards_tushare_token_without_persisting_it(
+    tmp_path, monkeypatch
+) -> None:
+    secret = "journal-tushare-secret-for-test"
+    captured: dict[str, object] = {}
+    baseline_date = date.today() - timedelta(days=2)
+    latest_date = date.today() - timedelta(days=1)
+
+    class Provider:
+        def fetch_daily(self, *_args):  # type: ignore[no-untyped-def]
+            if captured.get("fail"):
+                raise RuntimeError(f"upstream rejected token {secret}")
+            return SimpleNamespace(
+                bars=(SimpleNamespace(trade_date=latest_date, close=11.0),)
+            )
+
+        def close(self) -> None:
+            captured["closed"] = True
+
+    def provider_factory(source, token):  # type: ignore[no-untyped-def]
+        captured.update(source=source, token=token)
+        return Provider()
+
+    monkeypatch.setenv("EQUISEEK_USER_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(dispatcher_module, "market_data_provider", provider_factory)
+    registry = RunRegistry(history_path=tmp_path / "run-history.json")
+
+    async def execute(_report):  # type: ignore[no-untyped-def]
+        return {
+            "kind": "research",
+            "symbol": "600050.SH",
+            "source": "tushare",
+            "sourceKind": "public-history",
+            "adjustment": "qfq",
+            "asOf": baseline_date.isoformat(),
+            "advice": {
+                "action": "buy",
+                "action_label": "买入",
+                "current_price": 10.0,
+            },
+        }
+
+    run = registry.start("research", execute)
+    assert run.task is not None
+    await run.task
+    dispatcher = SidecarDispatcher(runs=registry)
+
+    response = await dispatcher.dispatch(
+        RpcRequest(
+            "history-tushare",
+            "research.history",
+            {"refresh": True, "tushareToken": secret},
+            "1.0",
+        )
+    )
+
+    assert captured == {"source": "tushare", "token": secret, "closed": True}
+    assert response["items"][0]["result"]["outcome"]["decision_return_pct"] == 10.0
+    assert secret not in json.dumps(response, ensure_ascii=False)
+
+    captured["fail"] = True
+    failed_refresh = await dispatcher.dispatch(
+        RpcRequest(
+            "history-tushare-error",
+            "research.history",
+            {"refresh": True, "tushareToken": secret},
+            "1.0",
+        )
+    )
+    serialized = json.dumps(failed_refresh, ensure_ascii=False)
+    assert secret not in serialized
+    assert "[REDACTED]" in serialized
+    assert secret not in (tmp_path / "run-history.json").read_text(encoding="utf-8")
 
 
 async def test_sidecar_adds_and_selects_real_local_workspaces(tmp_path, monkeypatch) -> None:
@@ -189,6 +310,84 @@ resources: []
     assert "已按本轮选择的 Skill 读取规则" in answer
     assert "经营现金流能否覆盖资本开支" in answer
     assert "Skill 输出已被安全门阻止" not in answer
+
+
+async def test_sidecar_injects_tushare_token_without_persisting_it(
+    tmp_path, monkeypatch
+) -> None:
+    secret = "tushare-secret-for-test"
+    captured: dict[str, object] = {}
+
+    async def fail_after_capture(request, **_kwargs):
+        captured["request"] = request
+        raise RuntimeError("synthetic provider failure")
+
+    monkeypatch.setenv("EQUISEEK_USER_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(dispatcher_module, "execute_research", fail_after_capture)
+    dispatcher = SidecarDispatcher()
+    started = await dispatcher.dispatch(
+        RpcRequest(
+            "start-tushare",
+            "research.start",
+            {
+                "symbol": "600050.SH",
+                "source": "tushare",
+                "tushareToken": secret,
+                "endDate": "2026-08-22",
+            },
+            "1.0",
+        )
+    )
+
+    for _ in range(100):
+        view = await dispatcher.dispatch(
+            RpcRequest("poll-tushare", "run.get", {"runId": started["runId"]}, "1.0")
+        )
+        if view["status"] not in {"queued", "running"}:
+            break
+        await asyncio.sleep(0.01)
+
+    assert captured["request"].tushare_token == secret
+    assert secret not in json.dumps(view, ensure_ascii=False)
+
+
+async def test_agent_market_tools_receive_tushare_token_without_persisting_it(
+    tmp_path, monkeypatch
+) -> None:
+    secret = "agent-tushare-secret-for-test"
+    captured: dict[str, object] = {}
+
+    async def fail_after_capture(request, **_kwargs):
+        captured["request"] = request
+        raise RuntimeError("synthetic agent failure")
+
+    monkeypatch.setenv("EQUISEEK_USER_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(dispatcher_module, "execute_investment_agent", fail_after_capture)
+    dispatcher = SidecarDispatcher()
+    started = await dispatcher.dispatch(
+        RpcRequest(
+            "start-agent-tushare",
+            "agent.start",
+            {
+                "question": "研究 600050.SH 的风险",
+                "source": "tushare",
+                "tushareToken": secret,
+                "endDate": "2026-08-22",
+            },
+            "1.0",
+        )
+    )
+
+    for _ in range(100):
+        view = await dispatcher.dispatch(
+            RpcRequest("poll-agent-tushare", "run.get", {"runId": started["runId"]}, "1.0")
+        )
+        if view["status"] not in {"queued", "running"}:
+            break
+        await asyncio.sleep(0.01)
+
+    assert captured["request"].run.tushare_token == secret
+    assert secret not in json.dumps(view, ensure_ascii=False)
 
 
 async def test_sidecar_conversation_lifecycle_is_local_and_persistent(

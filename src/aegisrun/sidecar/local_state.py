@@ -72,6 +72,8 @@ class LocalSettingsStore:
             and raw.get("deepSeekModel") == "deepseek-v4-flash-vision-exp"
         ):
             raw = {**raw, "deepSeekModel": "deepseek-v4-flash"}
+        if raw.get("dataSource") not in {"demo", "baostock", "tushare"}:
+            raw = {**raw, "dataSource": "baostock"}
         return {**DEFAULT_SETTINGS, **raw, "schemaVersion": 3}
 
     def patch(self, updates: dict[str, Any]) -> dict[str, Any]:
@@ -82,6 +84,8 @@ class LocalSettingsStore:
         value = self.load()
         value.pop("warning", None)
         value.update(updates)
+        if value.get("dataSource") not in {"demo", "baostock", "tushare"}:
+            raise ValueError("dataSource must be demo, baostock or tushare")
         if (
             value.get("modelProvider") == "deepseek-official"
             and value.get("deepSeekModel") == "deepseek-v4-flash-vision-exp"

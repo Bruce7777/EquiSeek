@@ -73,6 +73,21 @@ class RunRegistry:
         recent = tuple(self._runs.values())[-30:]
         return [item.view(include_result=False) for item in reversed(recent)]
 
+    def completed(self, kind: str | None = None) -> tuple[RunRecord, ...]:
+        return tuple(
+            run
+            for run in self._runs.values()
+            if run.status == "succeeded" and (kind is None or run.kind == kind)
+        )
+
+    def update_result(self, run_id: str, result: dict[str, Any]) -> RunRecord:
+        run = self.get(run_id)
+        if run.status != "succeeded":
+            raise ValueError("only succeeded runs can update their persisted result")
+        run.result = result
+        self._persist_history()
+        return run
+
     def delete(self, run_id: str) -> None:
         run = self.get(run_id)
         if run.task is not None and not run.task.done():
@@ -152,7 +167,7 @@ class RunRegistry:
         temporary = path.with_suffix(path.suffix + ".tmp")
         temporary.write_text(
             json.dumps(
-                {"schemaVersion": 1, "runs": completed},
+                {"schemaVersion": 2, "runs": completed},
                 ensure_ascii=False,
                 separators=(",", ":"),
             ),

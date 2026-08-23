@@ -3,18 +3,30 @@
   "productName": "EquiSeek",
   "version": "0.2.0",
   "description": "EquiSeek local-first open-source AI investment research platform",
+  "author": "EquiSeek Contributors",
+  "homepage": "https://github.com/Bruce7777/EquiSeek#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bruce7777/EquiSeek.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bruce7777/EquiSeek/issues"
+  },
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
     "dev": "electron-forge start",
     "build": "vite build -c vite.renderer.config.mjs",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
+    "prepare:compliance": "uv run --project ../.. python ../../scripts/prepare_release_compliance.py",
+    "package": "npm run prepare:compliance && electron-forge package",
+    "make": "npm run prepare:compliance && electron-forge make",
+    "postinstall": "patch-package",
     "test": "vitest run --config vite.renderer.config.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings=0"
   },
   "dependencies": {
+    "electron-squirrel-startup": "1.0.1",
     "lucide-react": "1.33.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -23,26 +35,34 @@
     "remark-gfm": "4.0.1"
   },
   "devDependencies": {
+    "@cyclonedx/cyclonedx-npm": "6.0.1",
     "@electron-forge/cli": "7.11.2",
+    "@electron-forge/maker-pkg": "7.11.2",
+    "@electron-forge/maker-squirrel": "7.11.2",
     "@electron-forge/maker-zip": "7.11.2",
     "@electron-forge/plugin-vite": "7.11.2",
+    "@electron/packager": "20.0.4",
     "@eslint/js": "10.0.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.5",
     "@types/node": "24.10.1",
+    "@types/electron-squirrel-startup": "1.0.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.1.0",
     "electron": "43.4.1",
     "eslint": "10.8.1",
     "jsdom": "30.0.1",
+    "patch-package": "8.0.1",
+    "spdx-license-list": "6.12.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.67.0",
     "vite": "8.2.2",
     "vitest": "4.1.11"
   },
   "overrides": {
+    "@electron/packager": "$@electron/packager",
     "tar": "7.5.22",
     "tmp": "0.2.7"
   }

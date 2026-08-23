@@ -43,4 +43,4 @@ def configure_tracing(jsonl_path: Path | None = None) -> None:
 
 
 def get_tracer() -> trace.Tracer:
-    return trace.get_tracer("aegisrun.runtime", "0.1.0")
+    return trace.get_tracer("aegisrun.runtime", "0.2.0")

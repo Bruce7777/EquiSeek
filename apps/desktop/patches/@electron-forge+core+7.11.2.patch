@@ -1,0 +1,44 @@
+diff --git a/node_modules/@electron-forge/core/dist/api/package.js b/node_modules/@electron-forge/core/dist/api/package.js
+index 8fb0bea..c0c53c8 100644
+--- a/node_modules/@electron-forge/core/dist/api/package.js
++++ b/node_modules/@electron-forge/core/dist/api/package.js
+@@ -48,33 +48,26 @@ function hidePromiseFromPromisify(fn) {
+  */
+ function sequentialHooks(hooks) {
+     return [
+-        hidePromiseFromPromisify(async (buildPath, electronVersion, platform, arch, done) => {
++        async ({ buildPath, electronVersion, platform, arch }) => {
+             for (const hook of hooks) {
+                 try {
+                     await (0, node_util_1.promisify)(hook)(buildPath, electronVersion, platform, arch);
+                 }
+                 catch (err) {
+                     d('hook failed:', hook.toString(), err);
+-                    return done(err);
++                    throw err;
+                 }
+             }
+-            done();
+-        }),
++        },
+     ];
+ }
+ function sequentialFinalizePackageTargetsHooks(hooks) {
+     return [
+-        hidePromiseFromPromisify(async (targets, done) => {
++        async (targets) => {
+             for (const hook of hooks) {
+-                try {
+-                    await (0, node_util_1.promisify)(hook)(targets);
+-                }
+-                catch (err) {
+-                    return done(err);
+-                }
++                await (0, node_util_1.promisify)(hook)(targets);
+             }
+-            done();
+-        }),
++        },
+     ];
+ }
+ const listrPackage = (childTrace, { dir: providedDir = process.cwd(), interactive = false, arch = (0, get_1.getHostArch)(), platform = process.platform, outDir, }) => {

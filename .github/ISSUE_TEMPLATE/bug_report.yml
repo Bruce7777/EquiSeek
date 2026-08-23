@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a reproducible EquiSeek defect without sensitive data.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: For security vulnerabilities, use the private channel in SECURITY.md instead of this form.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.2.0 or a full commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS arm64
+        - macOS x64
+        - Windows x64
+        - Python/API
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Use synthetic or redacted inputs only.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Data safety
+      options:
+        - label: I removed API keys, credentials, portfolio details, personal data, and confidential information.
+          required: true

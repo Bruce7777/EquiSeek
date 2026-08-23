@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 from datetime import date, timedelta
@@ -19,6 +20,7 @@ from aegisrun.application.services import (
     execute_investment_agent,
     execute_macro_research,
     execute_research,
+    market_data_provider,
 )
 from aegisrun.artifacts.html_report import render_investment_html
 from aegisrun.marketdata.models import AdjustmentMode
@@ -30,6 +32,11 @@ from aegisrun.research.deepseek import (
     normalize_deepseek_model,
     normalize_model_base_url,
     normalize_model_provider,
+)
+from aegisrun.research.journal import (
+    evaluate_research_outcome,
+    initial_research_outcome,
+    unavailable_research_outcome,
 )
 from aegisrun.research.vision import OpenAICompatibleVisionClient, VisionConfig
 from aegisrun.sidecar.attachments import process_attachments, validate_attachment_inputs
@@ -70,6 +77,7 @@ CAPABILITIES = (
     "portfolio.upsert_watch",
     "portfolio.remove_watch",
     "research.start",
+    "research.history",
     "agent.start",
     "macro.start",
     "run.get",
@@ -83,7 +91,7 @@ CAPABILITIES = (
 
 def _application_version() -> str:
     try:
-        return version("aegisrun")
+        return version("equiseek")
     except PackageNotFoundError:
         return "0.0.0-dev"
 
@@ -278,6 +286,8 @@ class SidecarDispatcher:
                 return self.portfolio.remove_watch(self._text(params, "symbol")).to_dict()
             if method == "research.start":
                 return self._start_research(params)
+            if method == "research.history":
+                return await self._research_history(params)
             if method == "agent.start":
                 return self._start_agent(params)
             if method == "macro.start":
@@ -332,7 +342,7 @@ class SidecarDispatcher:
                     start_date=start_date,
                     end_date=end_date,
                     adjustment=adjustment,
-                    tushare_token=None,
+                    tushare_token=self._optional_secret(params, "tushareToken"),
                     deepseek_api_key=None,
                     use_ai=False,
                     industry=str(params.get("industry", "")),
@@ -423,6 +433,121 @@ class SidecarDispatcher:
 
         return self.runs.start("research", execute).view(include_result=False)
 
+    async def _research_history(self, params: dict[str, Any]) -> dict[str, Any]:
+        refresh_requested = bool(params.get("refresh", False))
+        network_enabled = bool(self.settings.load().get("enableNetwork", True))
+        records = list(self.runs.completed("research"))
+        for record in records:
+            if not isinstance(record.result, dict):
+                continue
+            if not isinstance(record.result.get("outcome"), dict):
+                result = dict(record.result)
+                result["outcome"] = initial_research_outcome(result)
+                self.runs.update_result(record.run_id, result)
+
+        refreshed = refresh_requested and network_enabled
+        if refreshed:
+            await self._refresh_research_outcomes(
+                records,
+                tushare_token=self._optional_secret(params, "tushareToken"),
+            )
+
+        return {
+            "items": [record.view(include_result=True) for record in reversed(records)],
+            "refreshed": refreshed,
+        }
+
+    async def _refresh_research_outcomes(
+        self,
+        records: list[Any],
+        *,
+        tushare_token: str | None,
+    ) -> None:
+        groups: dict[tuple[str, str, str], list[Any]] = {}
+        for record in records:
+            result = record.result
+            if not isinstance(result, dict):
+                continue
+            outcome = result.get("outcome")
+            if isinstance(outcome, dict) and not outcome.get("is_real_market_data", True):
+                continue
+            source = str(result.get("source", ""))
+            symbol = str(result.get("symbol", ""))
+            adjustment = str(result.get("adjustment", "qfq"))
+            if source and symbol:
+                groups.setdefault((source, symbol, adjustment), []).append(record)
+
+        today = date.today()
+        for (source, symbol, adjustment_value), grouped in groups.items():
+            dated: list[tuple[Any, date]] = []
+            for record in grouped:
+                raw_as_of = str(record.result.get("asOf", ""))
+                try:
+                    dated.append((record, date.fromisoformat(raw_as_of)))
+                except ValueError:
+                    self._store_outcome_warning(record, "研究记录缺少有效的数据截止日")
+            if not dated:
+                continue
+            earliest = min(item[1] for item in dated)
+            if earliest >= today:
+                for record, baseline_date in dated:
+                    advice = record.result.get("advice", {})
+                    baseline = float(advice.get("current_price", 0) or 0)
+                    result = dict(record.result)
+                    result["outcome"] = evaluate_research_outcome(
+                        result,
+                        latest_price=baseline,
+                        latest_as_of=baseline_date,
+                        trading_days=0,
+                    )
+                    self.runs.update_result(record.run_id, result)
+                continue
+
+            provider = None
+            try:
+                provider = market_data_provider(
+                    source,
+                    tushare_token if source == "tushare" else None,
+                )
+                data = await asyncio.to_thread(
+                    provider.fetch_daily,
+                    symbol,
+                    earliest,
+                    today,
+                    AdjustmentMode(adjustment_value),
+                )
+                latest = data.bars[-1]
+                for record, baseline_date in dated:
+                    trading_days = sum(
+                        1 for bar in data.bars if bar.trade_date > baseline_date
+                    )
+                    result = dict(record.result)
+                    result["outcome"] = evaluate_research_outcome(
+                        result,
+                        latest_price=latest.close,
+                        latest_as_of=latest.trade_date,
+                        trading_days=trading_days,
+                    )
+                    self.runs.update_result(record.run_id, result)
+            except Exception as error:
+                error_message = str(error)
+                if tushare_token:
+                    error_message = error_message.replace(tushare_token, "[REDACTED]")
+                reason = f"最新行情刷新失败：{type(error).__name__}: {error_message[:160]}"
+                for record, _ in dated:
+                    self._store_outcome_warning(record, reason)
+            finally:
+                close = getattr(provider, "close", None)
+                if callable(close):
+                    close()
+
+    def _store_outcome_warning(self, record: Any, reason: str) -> None:
+        if not isinstance(record.result, dict):
+            return
+        result = dict(record.result)
+        result["outcome"] = unavailable_research_outcome(result, reason)
+        self.runs.update_result(record.run_id, result)
+
     def _start_agent(self, params: dict[str, Any]) -> dict[str, Any]:
         question = self._text(params, "question")
         routed = InvestmentIntentRouter().route(question)
@@ -474,6 +599,7 @@ class SidecarDispatcher:
             source = "demo"
         end_date = date.fromisoformat(str(params.get("endDate", date.today().isoformat())))
         deepseek_api_key = self._optional_secret(params, "deepseekApiKey")
+        tushare_token = self._optional_secret(params, "tushareToken")
         deepseek_model = normalize_deepseek_model(
             params.get("model", settings.get("deepSeekModel"))
         )
@@ -536,6 +662,7 @@ class SidecarDispatcher:
                         start_date=end_date - timedelta(days=900),
                         end_date=end_date,
                         adjustment=AdjustmentMode(str(params.get("adjustment", "qfq"))),
+                        tushare_token=tushare_token,
                         symbol=routed.symbol,
                         active_skills=selection.packages,
                         skill_selection_mode=(

@@ -6,6 +6,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from aegisrun.research.journal import initial_research_outcome
+
 
 def json_value(value: Any) -> Any:
     """Convert domain values into JSON-safe values without importing a UI framework."""
@@ -39,7 +41,7 @@ def research_projection(result: Any) -> dict[str, Any]:
     def series(values: tuple[float | None, ...]) -> list[float | None]:
         return [round(item, 4) if item is not None else None for item in values[offset:]]
 
-    return {
+    projection = {
         "kind": "research",
         "symbol": result.data.symbol,
         "source": result.data.source,
@@ -77,3 +79,5 @@ def research_projection(result: Any) -> dict[str, Any]:
             "wr10": series(result.indicators.wr[10]),
         },
     }
+    projection["outcome"] = initial_research_outcome(projection)
+    return projection

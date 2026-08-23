@@ -98,7 +98,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
 
     app = FastAPI(
         title="EquiSeek",
-        version="0.1.0",
+        version="0.2.0",
         description="Recoverable and policy-aware Agent Harness reference implementation.",
         lifespan=lifespan,
     )
@@ -121,7 +121,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
 
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "version": "0.1.0"}
+        return {"status": "ok", "version": "0.2.0"}
 
     @app.get("/api/capabilities")
     async def capabilities() -> dict[str, Any]:

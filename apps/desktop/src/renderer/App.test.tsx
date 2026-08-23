@@ -202,8 +202,13 @@ describe('EquiSeek desktop workspace', () => {
     await user.click(screen.getByRole('button', { name: '开始研究' }));
     await screen.findByTestId('research-report', {}, { timeout: 3000 });
 
-    expect(screen.getByLabelText('个股研究历史')).toHaveTextContent('600050.SH');
-    await user.click(screen.getAllByRole('button', { name: /600050.SH等待/ }).at(-1)!);
+    const journal = screen.getByLabelText('个股决策账本');
+    expect(journal).toHaveTextContent('600050.SH');
+    expect(journal).toHaveTextContent('未执行');
+    expect(journal).toHaveTextContent('当时价');
+    expect(journal).toHaveTextContent('最新价');
+    expect(journal).toHaveTextContent('+1.64%');
+    await user.click(screen.getAllByRole('button', { name: /600050.SH等待未执行/ }).at(-1)!);
     expect(screen.getByTestId('research-report')).toBeVisible();
     expect(screen.getByTestId('run-inspector')).toHaveTextContent('回看 600050.SH 研究');
   });
@@ -216,9 +221,33 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.getByText(/联网研究已开启/)).toBeInTheDocument();
     await user.click(screen.getByTestId('nav-research'));
     expect(screen.getByLabelText('数据来源')).toHaveValue('baostock');
+    expect(screen.getByRole('option', { name: '专业行情 · Tushare（需 Token）' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: '离线演示 · 仅测试' })).toBeInTheDocument();
     await user.click(screen.getByTestId('nav-settings'));
     expect(screen.getByRole('switch', { name: '使用联网公开数据' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('stores a Tushare token without exposing it to the research form', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText('把研究问题交给求衡');
+
+    await user.click(screen.getByTestId('nav-settings'));
+    const token = screen.getByLabelText('Tushare Token');
+    expect(token).toHaveAttribute('type', 'password');
+    await user.type(token, 'test-tushare-token');
+    await user.click(screen.getByRole('button', { name: '保存 Tushare Token' }));
+    await waitFor(() => expect(token).toHaveAttribute('placeholder', 'Tushare Token 已安全保存（输入可替换）'));
+    await user.selectOptions(screen.getByLabelText('默认市场数据源'), 'tushare');
+
+    await user.click(screen.getByTestId('nav-research'));
+    expect(screen.getByLabelText('数据来源')).toHaveValue('tushare');
+    expect(screen.getByRole('option', { name: '专业行情 · Tushare' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '开始研究' })).toBeEnabled();
+    expect(screen.queryByDisplayValue('test-tushare-token')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('nav-settings'));
+    await user.selectOptions(screen.getByLabelText('默认市场数据源'), 'baostock');
   });
 
   it('restores the complete macro decision dossier and semantic report', async () => {

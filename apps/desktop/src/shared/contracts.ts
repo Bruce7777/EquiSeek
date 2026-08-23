@@ -53,6 +53,7 @@ export interface ConversationTurn {
 export interface AttachmentSummary { name: string; mimeType: string; sizeBytes: number }
 export interface AttachmentSelection extends AttachmentSummary { token: string }
 export interface WorkspaceSummary { id: string; name: string; path: string; active: boolean; writable: boolean }
+export interface CredentialStatus { deepseek: boolean; custom: boolean; tushare: boolean }
 
 export interface SkillDetail extends SkillSummary {
   content: string;
@@ -75,7 +76,7 @@ export interface BootstrapData {
   recentRuns: RunView[];
   conversations: ConversationSummary[];
   runtime: { mode: string; database: string; loginRequired: boolean; networkDefault: boolean };
-  credentials?: { deepseek: boolean; custom: boolean };
+  credentials?: CredentialStatus;
 }
 
 export interface DesktopApi {
@@ -90,9 +91,9 @@ export interface DesktopApi {
     select(workspaceId: string): Promise<{ items: WorkspaceSummary[]; activeId: string }>;
   };
   credentials: {
-    status(): Promise<{ deepseek: boolean; custom: boolean }>;
-    set(name: 'deepseek' | 'custom', value: string): Promise<{ deepseek: boolean; custom: boolean }>;
-    clear(name: 'deepseek' | 'custom'): Promise<{ deepseek: boolean; custom: boolean }>;
+    status(): Promise<CredentialStatus>;
+    set(name: 'deepseek' | 'custom' | 'tushare', value: string): Promise<CredentialStatus>;
+    clear(name: 'deepseek' | 'custom' | 'tushare'): Promise<CredentialStatus>;
   };
   skills: {
     list(): Promise<{ items: SkillSummary[] }>;
@@ -102,7 +103,10 @@ export interface DesktopApi {
     importFile(): Promise<SkillDetail | null>;
     openRoot(): Promise<string>;
   };
-  research: { start(input: Record<string, unknown>): Promise<RunView> };
+  research: {
+    start(input: Record<string, unknown>): Promise<RunView>;
+    history(input?: { refresh?: boolean }): Promise<{ items: RunView[]; refreshed: boolean }>;
+  };
   agent: { start(input: Record<string, unknown>): Promise<RunView> };
   macro: { start(): Promise<RunView> };
   runs: {

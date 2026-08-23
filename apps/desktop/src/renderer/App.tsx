@@ -19,6 +19,7 @@ import {
   PanelRightClose,
   Play,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -46,7 +47,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { AttachmentSelection, BootstrapData, ConversationSummary, PortfolioBook, RunEvent, RunView, SkillDetail, SkillSummary, WorkspaceSummary } from '../shared/contracts';
+import type { AttachmentSelection, BootstrapData, ConversationSummary, CredentialStatus, PortfolioBook, RunEvent, RunView, SkillDetail, SkillSummary, WorkspaceSummary } from '../shared/contracts';
 import { api } from './bridge';
 import { MarkdownContent } from './MarkdownContent';
 import { MacroReport } from './MacroReport';
@@ -84,6 +85,17 @@ function activeWorkspace(items: WorkspaceSummary[]): WorkspaceSummary | undefine
 
 function statusLabel(status: string): string {
   return { running: '运行中', queued: '排队中', succeeded: '已完成', failed: '失败', cancelled: '已取消' }[status] || status;
+}
+
+function journalPercent(value: unknown): string {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  return `${number > 0 ? '+' : ''}${number.toFixed(2)}%`;
+}
+
+function journalPrice(value: unknown): string {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number.toFixed(4) : '—';
 }
 
 function AppLogo() {
@@ -146,21 +158,35 @@ function StockChart({ result }: { result: AnyRecord }) {
   );
 }
 
-function ResearchWorkspace({ networkEnabled, defaultSource, initialRuns, onRun }: { networkEnabled: boolean; defaultSource: string; initialRuns: RunView[]; onRun: (run: RunView, goal: string) => void }) {
+function ResearchWorkspace({ networkEnabled, defaultSource, tushareConfigured, initialRuns, onRun }: { networkEnabled: boolean; defaultSource: string; tushareConfigured: boolean; initialRuns: RunView[]; onRun: (run: RunView, goal: string) => void }) {
   const [symbol, setSymbol] = useState('600050.SH');
-  const [source, setSource] = useState(networkEnabled && defaultSource === 'baostock' ? 'baostock' : 'demo');
+  const [source, setSource] = useState(networkEnabled && ['baostock', 'tushare'].includes(defaultSource) ? defaultSource : 'demo');
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<AnyRecord | null>(null);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<RunView[]>([]);
+  const [historyRefreshing, setHistoryRefreshing] = useState(false);
+  const [historyWarning, setHistoryWarning] = useState('');
+  const [selectedRunId, setSelectedRunId] = useState('');
   const runRef = useRef('');
 
-  useEffect(() => setSource(networkEnabled && defaultSource === 'baostock' ? 'baostock' : 'demo'), [networkEnabled, defaultSource]);
-  useEffect(() => {
-    const researchRuns = initialRuns.filter((run) => run.kind === 'research' && run.status === 'succeeded');
-    void Promise.all(researchRuns.map((run) => api.runs.get(run.runId).catch(() => null)))
-      .then((items) => setHistory(items.filter((item): item is RunView => Boolean(item))));
-  }, [initialRuns]);
+  useEffect(() => setSource(networkEnabled && ['baostock', 'tushare'].includes(defaultSource) ? defaultSource : 'demo'), [networkEnabled, defaultSource]);
+  const loadHistory = async (refresh: boolean) => {
+    setHistoryRefreshing(true);
+    setHistoryWarning('');
+    try {
+      const response = await api.research.history({ refresh });
+      setHistory(response.items);
+    } catch (reason) {
+      const researchRuns = initialRuns.filter((run) => run.kind === 'research' && run.status === 'succeeded');
+      const items = await Promise.all(researchRuns.map((run) => api.runs.get(run.runId).catch(() => null)));
+      setHistory(items.filter((item): item is RunView => Boolean(item)));
+      setHistoryWarning(`结果刷新暂不可用，仍可回看已保存决策：${String(reason)}`);
+    } finally {
+      setHistoryRefreshing(false);
+    }
+  };
+  useEffect(() => { void loadHistory(networkEnabled); }, [initialRuns, networkEnabled]);
   useEffect(() => api.runs.subscribe(async (event) => {
     if (event.runId !== runRef.current || !['run.succeeded', 'run.failed', 'run.cancelled'].includes(event.type)) return;
     const run = await api.runs.get(event.runId);
@@ -168,12 +194,17 @@ function ResearchWorkspace({ networkEnabled, defaultSource, initialRuns, onRun }
     if (event.type === 'run.succeeded') {
       setResult((run.result || null) as AnyRecord | null);
       setHistory((current) => [run, ...current.filter((item) => item.runId !== run.runId)]);
+      setSelectedRunId(run.runId);
     }
     else setError(run.error?.message || '个股研究未完成，请检查证券代码、网络或数据源后重试。');
   }), []);
 
   const submit = async () => {
     if (!/^\d{6}\.(SH|SZ|BJ)$/i.test(symbol)) return;
+    if (source === 'tushare' && !tushareConfigured) {
+      setError('请先在“设置”中安全保存 Tushare Token。');
+      return;
+    }
     setRunning(true);
     setResult(null);
     setError('');
@@ -191,6 +222,7 @@ function ResearchWorkspace({ networkEnabled, defaultSource, initialRuns, onRun }
     const run = item.result ? item : await api.runs.get(item.runId);
     const restored = (run.result || null) as AnyRecord | null;
     setResult(restored);
+    setSelectedRunId(run.runId);
     if (restored?.symbol) setSymbol(String(restored.symbol));
     setError('');
     onRun(run, `回看 ${String(restored?.symbol || '个股')} 研究`);
@@ -199,6 +231,10 @@ function ResearchWorkspace({ networkEnabled, defaultSource, initialRuns, onRun }
   const removeHistory = async (runId: string) => {
     await api.runs.delete(runId);
     setHistory((current) => current.filter((item) => item.runId !== runId));
+    if (selectedRunId === runId) {
+      setSelectedRunId('');
+      setResult(null);
+    }
   };
 
   return (
@@ -207,21 +243,36 @@ function ResearchWorkspace({ networkEnabled, defaultSource, initialRuns, onRun }
         <div><span className="eyebrow">STOCK RESEARCH</span><h1>个股研究</h1><p>数据、公式、结论与失效条件在同一条证据链上。</p></div>
       </header>
       <div className="research-shell">
-        <aside className="research-history" aria-label="个股研究历史">
-          <div className="history-heading"><div><span className="eyebrow">HISTORY</span><h2>研究记录</h2></div><span>{history.length}</span></div>
+        <aside className="research-history" aria-label="个股决策账本">
+          <div className="history-heading"><div><span className="eyebrow">DECISION JOURNAL</span><h2>决策账本</h2></div><div className="history-heading-actions"><span>{history.length}</span><button aria-label="刷新决策结果" title="按最新收盘价刷新" onClick={() => void loadHistory(networkEnabled)} disabled={historyRefreshing}>{historyRefreshing ? <LoaderCircle className="spin" size={13} /> : <RefreshCw size={13} />}</button></div></div>
+          <p className="journal-disclaimer">回看当时结论，并用同复权收盘价验证后续表现；不代表真实成交。</p>
+          {historyWarning && <p className="journal-warning">{historyWarning}</p>}
           <div className="history-list">{history.map((item) => {
             const payload = (item.result || {}) as AnyRecord;
             const historySymbol = String(payload.symbol || '个股研究');
             const advice = (payload.advice || {}) as AnyRecord;
-            return <article className="history-item" key={item.runId}><button onClick={() => void restore(item)}><strong>{historySymbol}</strong><span>{String(advice.action_label || '研究完成')} · {String(payload.asOf || payload.as_of || '—')}</span><small>{new Date(item.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></button><button className="history-delete" aria-label={`删除 ${historySymbol} 研究记录`} onClick={() => void removeHistory(item.runId)}><Trash2 size={13} /></button></article>;
-          })}{!history.length && <p className="history-empty">完成一次研究后，这里会永久保留记录，重启应用也能回看。</p>}</div>
+            const outcome = (payload.outcome || {}) as AnyRecord;
+            const resultValue = outcome.decision_return_pct ?? outcome.price_change_pct;
+            const resultPrefix = outcome.decision_return_pct == null ? '价格变化' : '假设结果';
+            return <article className={`history-item journal-item ${selectedRunId === item.runId ? 'selected' : ''}`} key={item.runId}>
+              <button aria-label={`${historySymbol}${String(advice.action_label || '研究完成')}${String(outcome.status_label || '待观察')}`} onClick={() => void restore(item)}>
+                <div className="journal-item-top"><strong>{historySymbol}</strong><span className={`outcome-badge ${String(outcome.status || 'pending')}`}>{String(outcome.status_label || '待观察')}</span></div>
+                <span className="journal-decision"><b>{String(advice.action_label || '研究完成')}</b> · {String(payload.asOf || payload.as_of || '—')}</span>
+                <dl className="journal-prices"><div><dt>当时价</dt><dd>{journalPrice(outcome.baseline_price ?? advice.current_price)}</dd></div><div><dt>最新价</dt><dd>{journalPrice(outcome.latest_price)}</dd></div></dl>
+                <div className="journal-result"><span>{resultPrefix}</span><strong className={Number(resultValue) > 0 ? 'positive' : Number(resultValue) < 0 ? 'negative' : ''}>{journalPercent(resultValue)}</strong></div>
+                <small>{Number(outcome.trading_days || 0)} 个交易日 · 更新至 {String(outcome.latest_as_of || payload.asOf || '—')}</small>
+              </button>
+              <button className="history-delete" aria-label={`删除 ${historySymbol} 研究记录`} onClick={() => void removeHistory(item.runId)}><Trash2 size={13} /></button>
+            </article>;
+          })}{historyRefreshing && !history.length && <p className="history-empty">正在读取并核验本机决策记录…</p>}{!historyRefreshing && !history.length && <p className="history-empty">完成一次研究后，这里会永久保留当时决策；联网打开时自动核验后续表现。</p>}</div>
         </aside>
         <div className="research-current">
           <div className="research-toolbar">
             <label><span>证券代码</span><div className="input-with-icon"><Search size={16} /><input aria-label="证券代码" value={symbol} onChange={(event) => setSymbol(event.target.value)} /></div></label>
-            <label><span>数据模式</span><select aria-label="数据来源" value={source} onChange={(event) => setSource(event.target.value)}><option value="baostock">自动联网 · BaoStock</option><option value="demo">离线演示 · 仅测试</option></select></label>
-            <button className="primary-button" onClick={submit} disabled={running}>{running ? <LoaderCircle className="spin" size={16} /> : <Play size={16} />}{running ? '研究中' : '开始研究'}</button>
+            <label><span>数据模式</span><select aria-label="数据来源" value={source} onChange={(event) => setSource(event.target.value)}><option value="baostock">自动联网 · BaoStock</option><option value="tushare">专业行情 · Tushare{tushareConfigured ? '' : '（需 Token）'}</option><option value="demo">离线演示 · 仅测试</option></select></label>
+            <button className="primary-button" onClick={submit} disabled={running || (source === 'tushare' && !tushareConfigured)}>{running ? <LoaderCircle className="spin" size={16} /> : <Play size={16} />}{running ? '研究中' : '开始研究'}</button>
           </div>
+          {source === 'tushare' && !tushareConfigured && <div className="macro-stop"><CircleAlert size={18} /><div><strong>Tushare 尚未配置</strong><p>前往“设置”保存 Token 后即可使用；Token 只由主进程安全注入，不会进入研究记录。</p></div></div>}
           {running && <div className="run-banner"><LoaderCircle className="spin" size={18} /><div><strong>Python 研究流水线正在执行</strong><span>数据加载 → 指标计算 → 多周期信号 → 风险门控 → 结论</span></div></div>}
           {error && <div className="macro-stop"><CircleAlert size={18} /><div><strong>个股研究未完成</strong><p>{error}</p></div></div>}
           {!running && !result && <EmptyState icon={TrendingUp} title="从一个明确问题开始" description="输入证券代码，结论会同时展示数据截止日、公式版本和失效条件。" />}
@@ -505,22 +556,28 @@ function MacroPage({ networkEnabled, onRun }: { networkEnabled: boolean; onRun: 
   </div>;
 }
 
-function SettingsPage({ bootstrap, onUpdate, onWorkspaceChange }: { bootstrap: BootstrapData; onUpdate: (settings: Record<string, unknown>) => void; onWorkspaceChange: (items: WorkspaceSummary[]) => void }) {
+function SettingsPage({ bootstrap, onUpdate, onWorkspaceChange, onCredentialsChange }: { bootstrap: BootstrapData; onUpdate: (settings: Record<string, unknown>) => void; onWorkspaceChange: (items: WorkspaceSummary[]) => void; onCredentialsChange: (credentials: CredentialStatus) => void }) {
   const [settings, setSettings] = useState(bootstrap.settings);
-  const [credentials, setCredentials] = useState(bootstrap.credentials || { deepseek: false, custom: false });
+  const [credentials, setCredentials] = useState(bootstrap.credentials || { deepseek: false, custom: false, tushare: false });
   const [deepseekKey, setDeepseekKey] = useState('');
+  const [tushareToken, setTushareToken] = useState('');
   useEffect(() => setSettings(bootstrap.settings), [bootstrap.settings]);
+  useEffect(() => setCredentials(bootstrap.credentials || { deepseek: false, custom: false, tushare: false }), [bootstrap.credentials]);
   const patch = async (input: Record<string, unknown>) => { const next = await api.settings.patch(input); setSettings(next); onUpdate(next); };
   const choose = async () => { const path = await api.native.chooseDirectory(); if (!path) return; const result = await api.workspaces.add(path); onWorkspaceChange(result.items); const next = await api.settings.patch({ workspaceRoot: path }); setSettings(next); onUpdate(next); };
   const selectWorkspace = async (workspaceId: string) => { const result = await api.workspaces.select(workspaceId); onWorkspaceChange(result.items); const next = await api.settings.patch({ workspaceRoot: result.items.find((item) => item.active)?.path || '' }); setSettings(next); onUpdate(next); };
   const credentialName = settings.modelProvider === 'openai-compatible' ? 'custom' : 'deepseek';
   const currentCredentialSaved = credentials[credentialName];
-  const saveKey = async () => { setCredentials(await api.credentials.set(credentialName, deepseekKey)); setDeepseekKey(''); };
-  const clearKey = async () => setCredentials(await api.credentials.clear(credentialName));
+  const applyCredentials = (next: CredentialStatus) => { setCredentials(next); onCredentialsChange(next); };
+  const saveKey = async () => { applyCredentials(await api.credentials.set(credentialName, deepseekKey)); setDeepseekKey(''); };
+  const clearKey = async () => applyCredentials(await api.credentials.clear(credentialName));
+  const saveTushare = async () => { applyCredentials(await api.credentials.set('tushare', tushareToken)); setTushareToken(''); };
+  const clearTushare = async () => applyCredentials(await api.credentials.clear('tushare'));
   const selectProvider = async (provider: string) => { setDeepseekKey(''); await patch({ modelProvider: provider, ...(provider === 'deepseek-official' ? { modelBaseUrl: 'https://api.deepseek.com', ...(settings.deepSeekModel === 'deepseek-v4-flash-vision-exp' ? { deepSeekModel: 'deepseek-v4-flash' } : {}) } : {}) }); };
   const currentWorkspace = activeWorkspace(bootstrap.workspaces);
   return <div className="workspace-page narrow"><header className="page-header"><div><span className="eyebrow">SIMPLE LOCAL SETTINGS</span><h1>设置</h1><p>无需账号和登录；默认联网获取公开市场数据，所有成果仍保存在本机。</p></div></header><section className="settings-card">
     <div className="settings-group"><div><Globe2 size={18} /><span><strong>使用联网公开数据（推荐）</strong><small>开启 BaoStock、官方宏观研究和需要网络的 Skill；关闭后仅用于流程测试</small></span></div><button aria-label="使用联网公开数据" role="switch" aria-checked={Boolean(settings.enableNetwork)} className={`switch ${settings.enableNetwork ? 'on' : ''}`} onClick={() => void patch({ enableNetwork: !settings.enableNetwork, dataSource: settings.enableNetwork ? 'demo' : 'baostock' })}><i /></button></div>
+    <div className="settings-group vertical model-setting"><div><BarChart3 size={18} /><span><strong>市场行情数据源</strong><small>BaoStock 无需凭据；Tushare Token 由系统安全存储加密，不写入运行记录或报告</small></span></div><div className="model-provider-grid"><label><span>默认数据源</span><select aria-label="默认市场数据源" disabled={!settings.enableNetwork} value={String(settings.dataSource || 'baostock')} onChange={(event) => void patch({ dataSource: event.target.value })}><option value="baostock">BaoStock</option><option value="tushare">Tushare</option>{!settings.enableNetwork && <option value="demo">离线 Demo</option>}</select></label></div><div className="credential-row"><input aria-label="Tushare Token" type="password" value={tushareToken} onChange={(event) => setTushareToken(event.target.value)} placeholder={credentials.tushare ? 'Tushare Token 已安全保存（输入可替换）' : '输入 Tushare Token'} /><button aria-label="保存 Tushare Token" className="secondary-button" disabled={!tushareToken.trim()} onClick={() => void saveTushare()}>保存</button>{credentials.tushare && <button aria-label="清除 Tushare Token" className="text-danger" onClick={() => void clearTushare()}>清除</button>}</div><p className="credential-boundary">当前接入范围与 Python Provider 一致：A 股、境内指数和基金；全球市场仍在后续路线图中。</p></div>
     <div className="settings-group vertical model-setting"><div><Bot size={18} /><span><strong>DeepSeek 模型与供应商</strong><small>完整投研助手 可切换模型；官方支持 Pro/Flash，图文实验模型需由自定义兼容端点提供</small></span><button aria-label="启用 DeepSeek 推理" role="switch" aria-checked={Boolean(settings.enableDeepSeek)} className={`switch ${settings.enableDeepSeek ? 'on' : ''}`} onClick={() => void patch({ enableDeepSeek: !settings.enableDeepSeek })}><i /></button></div><div className="model-provider-grid"><label><span>供应商</span><select aria-label="DeepSeek 供应商" value={String(settings.modelProvider || 'deepseek-official')} onChange={(event) => void selectProvider(event.target.value)}><option value="deepseek-official">DeepSeek 官方 API</option><option value="openai-compatible">自定义 OpenAI 兼容端点</option></select></label><label><span>模型</span><select aria-label="DeepSeek 模型" value={String(settings.deepSeekModel || 'deepseek-v4-flash')} onChange={(event) => void patch({ deepSeekModel: event.target.value })}>{modelOptions.map((item) => <option key={item.id} value={item.id} disabled={settings.modelProvider !== 'openai-compatible' && item.id === 'deepseek-v4-flash-vision-exp'}>{item.name} · {item.detail}</option>)}</select></label><label className="provider-url"><span>API 地址</span><input aria-label="模型 API 地址" readOnly={settings.modelProvider !== 'openai-compatible'} value={String(settings.modelBaseUrl || 'https://api.deepseek.com')} onChange={(event) => setSettings({ ...settings, modelBaseUrl: event.target.value })} onBlur={(event) => void patch({ modelBaseUrl: event.target.value })} /></label></div><div className="model-capabilities"><span><Terminal size={13} />Tool Calls</span><span>1M Context</span><span className={settings.deepSeekModel === 'deepseek-v4-flash-vision-exp' ? 'vision-on' : ''}>{settings.deepSeekModel === 'deepseek-v4-flash-vision-exp' ? '图文多模态 · 端点自证' : '文本输入'}</span></div><div className="credential-row"><input aria-label="DeepSeek API Key" type="password" value={deepseekKey} onChange={(event) => setDeepseekKey(event.target.value)} placeholder={currentCredentialSaved ? '当前供应商凭据已安全保存（输入可替换）' : '输入当前供应商 API Key'} /><button className="secondary-button" disabled={!deepseekKey.trim()} onClick={() => void saveKey()}>保存</button>{currentCredentialSaved && <button className="text-danger" onClick={() => void clearKey()}>清除</button>}</div><p className="credential-boundary">官方 API 与自定义端点的凭据分别保存，切换供应商不会交叉发送。官方当前仅公布 V4 Pro 和 V4 Flash。</p></div>
     <div className="settings-group"><div><WandSparkles size={18} /><span><strong>包含内置 Skill</strong><small>关闭后只使用用户 Skill 目录中的能力</small></span></div><button aria-label="包含内置 Skill" role="switch" aria-checked={Boolean(settings.includeBuiltinSkills)} className={`switch ${settings.includeBuiltinSkills ? 'on' : ''}`} onClick={() => void patch({ includeBuiltinSkills: !settings.includeBuiltinSkills })}><i /></button></div>
     <div className="settings-group vertical"><div><FolderOpen size={18} /><span><strong>Agent 工作区</strong><small>文件编辑器和持久 Shell 只能在当前选定目录中运行</small></span></div><div className="workspace-settings-row"><select aria-label="默认 Agent 工作区" value={currentWorkspace?.id || ''} onChange={(event) => void selectWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.path}</option>)}</select><button className="secondary-button" onClick={choose}><Plus size={14} />添加目录</button></div><div className="path-picker"><code>{currentWorkspace?.path}</code><span className="workspace-access"><ShieldCheck size={12} />{currentWorkspace?.writable ? '可读写' : '只读'}</span></div></div></section><section className="privacy-card"><ShieldCheck size={20} /><div><h3>凭据和工作区有强制边界</h3><p>API Key 由系统安全存储加密；文件覆盖前必须先读取且版本未变，Shell 通过 macOS Seatbelt 限定在选定工作区内。</p></div></section></div>;
@@ -567,13 +624,13 @@ export function App() {
         <div className="sidebar-bottom"><div className="workspace-switch"><div className="workspace-avatar">QS</div><label><span>当前工作区</span><select aria-label="当前工作区" value={activeWorkspace(bootstrap.workspaces)?.id || ''} onChange={(event) => void selectGlobalWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button aria-label="新增工作区" onClick={() => void addGlobalWorkspace()}><Plus size={14} /></button></div><div className="local-status"><span><i />Sidecar 已连接</span><small>协议 v1.0</small></div></div>
       </aside>
       <main className="main-content">
-        <section className="view-pane" hidden={view !== 'agent'}><AgentWorkspace bootstrap={bootstrap} selectedSkills={selectedSkills} onRun={(run, nextGoal) => startRun('agent', run, nextGoal)} onWorkspaceChange={updateWorkspaces} onSettingsChange={(settings) => setBootstrap({ ...bootstrap, settings })} /></section>
-        <section className="view-pane" hidden={view !== 'research'}><ResearchWorkspace networkEnabled={Boolean(bootstrap.settings.enableNetwork)} defaultSource={String(bootstrap.settings.dataSource || 'baostock')} initialRuns={bootstrap.recentRuns} onRun={(run, nextGoal) => startRun('research', run, nextGoal)} /></section>
+        <section className="view-pane" hidden={view !== 'agent'}><AgentWorkspace bootstrap={bootstrap} selectedSkills={selectedSkills} onRun={(run, nextGoal) => startRun('agent', run, nextGoal)} onWorkspaceChange={updateWorkspaces} onSettingsChange={(settings) => setBootstrap((current) => current ? { ...current, settings } : current)} /></section>
+        <section className="view-pane" hidden={view !== 'research'}><ResearchWorkspace networkEnabled={Boolean(bootstrap.settings.enableNetwork)} defaultSource={String(bootstrap.settings.dataSource || 'baostock')} tushareConfigured={Boolean(bootstrap.credentials?.tushare)} initialRuns={bootstrap.recentRuns} onRun={(run, nextGoal) => startRun('research', run, nextGoal)} /></section>
         <section className="view-pane" hidden={view !== 'portfolio'}><PortfolioPage initial={bootstrap.portfolio} /></section>
         <section className="view-pane" hidden={view !== 'candidates'}><div className="workspace-page"><header className="page-header"><div><span className="eyebrow">CANDIDATE WORKBENCH</span><h1>候选池</h1><p>把本地持仓与自选交给 Agent，按显式策略 Skill 形成排序。</p></div></header><div className="candidate-cta"><div><ListChecks size={24} /><h2>候选池由 Agent 任务驱动</h2><p>当前有 {bootstrap.portfolio.positions.length + bootstrap.portfolio.watchlist.length} 个可研究标的。空候选池会直接返回，不启动无意义的网络请求。</p></div><button className="primary-button" onClick={() => setView('agent')}>前往 Agent 扫描 <ArrowUpRight size={16} /></button></div></div></section>
         <section className="view-pane" hidden={view !== 'macro'}><MacroPage networkEnabled={Boolean(bootstrap.settings.enableNetwork)} onRun={(run, nextGoal) => startRun('macro', run, nextGoal)} /></section>
-        <section className="view-pane" hidden={view !== 'skills'}><SkillsPage bootstrap={bootstrap} selected={selectedSkills} onToggle={toggleSkill} onSkillsChange={(skills) => setBootstrap({ ...bootstrap, skills })} /></section>
-        <section className="view-pane" hidden={view !== 'settings'}><SettingsPage bootstrap={bootstrap} onUpdate={(settings) => setBootstrap({ ...bootstrap, settings })} onWorkspaceChange={updateWorkspaces} /></section>
+        <section className="view-pane" hidden={view !== 'skills'}><SkillsPage bootstrap={bootstrap} selected={selectedSkills} onToggle={toggleSkill} onSkillsChange={(skills) => setBootstrap((current) => current ? { ...current, skills } : current)} /></section>
+        <section className="view-pane" hidden={view !== 'settings'}><SettingsPage bootstrap={bootstrap} onUpdate={(settings) => setBootstrap((current) => current ? { ...current, settings } : current)} onWorkspaceChange={updateWorkspaces} onCredentialsChange={(credentials) => setBootstrap((current) => current ? { ...current, credentials } : current)} /></section>
       </main>
       {inspectorOpen && <Inspector run={runContexts[view].run} events={runContexts[view].events} goal={runContexts[view].goal} onClose={() => setInspectorOpen(false)} />}
       {!inspectorOpen && <button className="open-inspector" aria-label="打开运行检查器" onClick={() => setInspectorOpen(true)}><Activity size={17} /></button>}

@@ -11,8 +11,8 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
         with:
           version: "0.10.9"
           enable-cache: true
@@ -42,8 +42,8 @@ jobs:
       EQUISEEK_TEST_POSTGRES_URL: postgresql+asyncpg://equiseek:equiseek@127.0.0.1:54329/equiseek
       EQUISEEK_TEST_CHECKPOINT_URL: postgresql://equiseek:equiseek@127.0.0.1:54329/equiseek
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
       - run: uv python install 3.12
       - run: uv sync --frozen --all-extras
       - run: uv run pytest -m integration tests/integration/test_postgres.py -q
@@ -51,14 +51,14 @@ jobs:
   container:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: docker build -t equiseek:${{ github.sha }} .
       - run: docker build -f Dockerfile.sandbox -t equiseek-sandbox:${{ github.sha }} .
-      - uses: anchore/sbom-action@v0
+      - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
           image: equiseek:${{ github.sha }}
           output-file: sbom.spdx.json
-      - uses: aquasecurity/trivy-action@0.30.0
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: equiseek:${{ github.sha }}
           severity: CRITICAL,HIGH

@@ -29,7 +29,7 @@ down:
 	docker compose down
 
 sandbox-image:
-	docker build -f Dockerfile.sandbox -t equiseek-sandbox:0.1.0 .
+	docker build -f Dockerfile.sandbox -t equiseek-sandbox:0.2.0 .
 
 demo-fake:
 	uv run equiseek demo-fake --report .equiseek/demo-report.html

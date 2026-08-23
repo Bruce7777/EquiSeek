@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "equiseek"
-version = "0.1.0"
+version = "0.2.0"
 description = "EquiSeek: a local-first AI investment research platform with a recoverable agent harness."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -16,6 +16,7 @@ classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3.12",
 ]
+
 dependencies = [
   "aiosqlite>=0.20,<1",
   "alembic>=1.15,<2",
@@ -71,6 +72,12 @@ aegisrun-sidecar = "aegisrun.sidecar.server:main"
 equiseek = "aegisrun.cli:app"
 equiseek-desktop = "aegisrun.desktop.app:main"
 equiseek-sidecar = "aegisrun.sidecar.server:main"
+
+[project.urls]
+Homepage = "https://github.com/Bruce7777/EquiSeek"
+Repository = "https://github.com/Bruce7777/EquiSeek.git"
+Issues = "https://github.com/Bruce7777/EquiSeek/issues"
+Security = "https://github.com/Bruce7777/EquiSeek/security/policy"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aegisrun"]

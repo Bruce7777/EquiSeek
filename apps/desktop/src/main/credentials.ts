@@ -2,7 +2,7 @@ import path from 'node:path';
 import { chmod, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { app, safeStorage } from 'electron';
 
-type CredentialName = 'deepseek' | 'custom';
+type CredentialName = 'deepseek' | 'custom' | 'tushare';
 type StoredCredentials = Partial<Record<CredentialName, string>>;
 
 export class CredentialStore {
@@ -23,6 +23,7 @@ export class CredentialStore {
     return {
       deepseek: Boolean(stored.deepseek),
       custom: Boolean(stored.custom),
+      tushare: Boolean(stored.tushare),
     };
   }
 

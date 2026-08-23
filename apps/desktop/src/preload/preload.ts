@@ -28,7 +28,10 @@ const api: DesktopApi = {
     importFile: () => invoke('aegisrun:skills:import-file'),
     openRoot: () => invoke('aegisrun:skills:open-root'),
   },
-  research: { start: (input) => invoke('aegisrun:research:start', input) },
+  research: {
+    start: (input) => invoke('aegisrun:research:start', input),
+    history: (input = {}) => invoke('aegisrun:research:history', input),
+  },
   agent: { start: (input) => invoke('aegisrun:agent:start', input) },
   macro: { start: () => invoke('aegisrun:macro:start') },
   runs: {
