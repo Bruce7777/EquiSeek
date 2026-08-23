@@ -87,7 +87,9 @@ apps/desktop/out/EquiSeek-darwin-*/EquiSeek.app
 make desktop-package
 ```
 
-产物位于 `apps/desktop/out/make/`：macOS 本地无证书构建为未签名 ZIP，Windows 为未签名 Squirrel Setup.exe。PyInstaller sidecar 与 Electron 应用必须在目标架构上原生构建。正式发布使用手动签名工作流，macOS 增加签名 PKG + ZIP、Windows 生成签名 Squirrel 产物，并必须通过签名、公证、许可证包、SBOM 与校验和门禁；详见[桌面发布签名](docs/releasing-desktop.md)。
+产物位于 `apps/desktop/out/make/`：macOS 本地无证书构建为未签名 ZIP，Windows 为未签名 Squirrel Setup.exe。PyInstaller sidecar 与 Electron 应用必须在目标架构上原生构建。
+
+不会编程的试用者可从 [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases) 下载三架构未签名 Alpha。请只下载文件名包含 `unsigned` 的对应平台产物，先核对 `SHA256SUMS`，并阅读 Release 中的 Gatekeeper/SmartScreen 提示。未来取得证书后可另行发布签名稳定版；详见[桌面发布](docs/releasing-desktop.md)。
 
 也可以不使用 Make：
 

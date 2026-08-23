@@ -1,4 +1,4 @@
-# 桌面签名发布
+# 桌面发布
 
 当前产品版本统一为 `0.2.0`。首发二进制矩阵是 macOS arm64、macOS x64 与 Windows x64；Windows arm64 runner 和 Python sidecar 原生依赖验证完成前，不列入发布承诺。
 
@@ -6,10 +6,16 @@
 
 | 平台 | 架构 | 产物 | 必须验证 |
 | --- | --- | --- | --- |
-| macOS | arm64、x64 | PKG、ZIP | Developer ID Application/Installer、notarytool、公证票据、Gatekeeper |
-| Windows | x64 | Squirrel Setup.exe、nupkg、RELEASES | Authenticode、时间戳、签名状态 |
+| macOS | arm64、x64 | 未签名 Alpha ZIP；未来签名版 PKG、ZIP | Alpha 明示未签名；签名版验证 Developer ID、公证票据与 Gatekeeper |
+| Windows | x64 | 未签名 Alpha Setup.exe；未来签名版 Setup.exe、nupkg、RELEASES | Alpha 明示未签名；签名版验证 Authenticode 与时间戳 |
 
-普通 `.github/workflows/desktop.yml` 只做未签名的三架构构建回归，保留 7 天，不得作为正式下载。`.github/workflows/desktop-signed.yml` 只能手动触发，使用受保护的 `desktop-release` environment，生成签名产物并保留 14 天；它不会创建 GitHub Release 或推送任何远端。
+普通 `.github/workflows/desktop.yml` 只做未签名的三架构构建回归，保留 7 天，不作为用户下载入口。首发 tag `v0.2.0-alpha.1` 会触发 `.github/workflows/desktop-release-unsigned.yml`：三平台原生构建、确认没有发布者签名、统一生成带 `unsigned` 的文件名和 `SHA256SUMS`，最后创建 GitHub Pre-release。该流程不读取 secrets，只给最终 Release job 最小 `contents: write` 权限；后续 Alpha 必须连同版本和 Release notes 显式评审，避免旧说明被自动复用。
+
+`.github/workflows/desktop-signed.yml` 继续保留为未来手动签名流程，使用受保护的 `desktop-release` environment，生成签名产物并保留 14 天；它不会创建 GitHub Release 或推送任何远端。
+
+## 未签名 Alpha
+
+未签名 Alpha 面向愿意接受系统警告的早期试用者，不得表述为“已签名”“已公证”“商店审核”或稳定正式版。Release 必须同时提供 macOS arm64/x64、Windows x64、SHA-256 校验和及中英文安装警告。macOS 用户需要通过 Gatekeeper 的明确人工确认，Windows 用户可能需要通过 SmartScreen 的“更多信息 → 仍要运行”；企业策略可能完全禁止安装。
 
 ## macOS 凭据
 
@@ -53,13 +59,15 @@ PFX 路径需要：
 
 Forge 7.11.2 仍依赖有路径穿越告警的 packager 18.x。仓库通过 npm override 固定 `@electron/packager 20.0.4`（上游从 20.0.1 起移除 `extract-zip`），并用 `patch-package` 适配 packager 20 的 Promise hook API。升级 Forge 时必须先尝试删除 `apps/desktop/patches`，以全套 package/make 回归证明上游已原生兼容；不要长期无审查地叠加补丁。
 
-## 本地与正式门禁
+## 本地与发布门禁
 
-本地 `make desktop-package` 可以生成未签名测试包；本机没有证书时不得把它描述为正式安装包。正式发布必须同时满足：
+本地 `make desktop-package` 可以生成未签名测试包。未签名 Alpha 发布必须同时满足：
 
 1. Python/TypeScript/Electron 测试与完整 `pip-audit`、`npm audit` 通过；
 2. sidecar 在冻结后和应用包内分别自检通过；
 3. 两份 SBOM 可验证、许可证索引无 UNKNOWN/缺失文本；
-4. macOS/Windows 平台签名检查通过；
-5. 安装、首次启动、卸载和凭据安全存储在干净系统人工验收；
-6. 公开地址、安全报告渠道、行情权利、品牌与商标最终核查完成后，才创建正式 Release。
+4. 文件名、标题和正文明确标记 `unsigned Alpha`，并附 Gatekeeper/SmartScreen 风险提示；
+5. 三个平台资产和 `SHA256SUMS` 完整，安装、首次启动和凭据安全存储完成抽样验收；
+6. 正式仓公开边界、安全报告渠道和负责任使用说明核查完成。
+
+未来签名稳定版还必须增加 macOS/Windows 平台签名、公证、时间戳与干净系统安装验证；没有证书时不得把 Alpha 描述为签名稳定安装包。

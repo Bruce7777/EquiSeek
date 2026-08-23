@@ -87,7 +87,9 @@ Create the current platform's unsigned test packages:
 make desktop-package
 ```
 
-Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS and an unsigned Squirrel Setup.exe on Windows. The PyInstaller sidecar and Electron app must be built natively on each target architecture. Formal releases use the manual signed workflow to add a signed PKG + ZIP on macOS and signed Squirrel artifacts on Windows, and must pass signature, notarization, license-bundle, SBOM, and checksum gates; see [Desktop release signing](docs/releasing-desktop.md).
+Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS and an unsigned Squirrel Setup.exe on Windows. The PyInstaller sidecar and Electron app must be built natively on each target architecture.
+
+Non-developer testers can download the three unsigned Alpha builds from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases). Download only the matching asset whose name contains `unsigned`, verify it against `SHA256SUMS`, and read the Gatekeeper/SmartScreen warning in the Release. A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
 
 To build without Make:
 

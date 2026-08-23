@@ -1,0 +1,176 @@
+name: desktop-release-unsigned
+
+on:
+  push:
+    tags:
+      - "v0.2.0-alpha.1"
+
+concurrency:
+  group: unsigned-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Unsigned release preflight
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.10.9"
+          enable-cache: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Validate alpha tag against package version
+        shell: bash
+        run: |
+          base_version="$(node -p "require('./apps/desktop/package.json').version")"
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v${base_version}-alpha\.[0-9]+$ ]]; then
+            echo "Tag $GITHUB_REF_NAME must match v${base_version}-alpha.N" >&2
+            exit 1
+          fi
+      - run: uv python install 3.12
+      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: npm ci --prefix apps/desktop
+      - run: uv run ruff check .
+      - run: uv run mypy src
+      - run: uv run pytest -m "not integration" --cov --cov-report=term-missing
+      - run: uv run python scripts/check_version_consistency.py
+      - run: uv run python scripts/verify_readme_pair.py
+      - run: uv run pip-audit
+      - run: npm --prefix apps/desktop run lint
+      - run: npm --prefix apps/desktop run typecheck
+      - run: npm --prefix apps/desktop run test
+      - run: npm --prefix apps/desktop audit --audit-level=high
+
+  package:
+    name: ${{ matrix.name }}
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Package macOS Apple Silicon unsigned
+            os: macos-14
+            arch: arm64
+            artifact: release-macos-arm64
+          - name: Package macOS Intel unsigned
+            os: macos-15-intel
+            arch: x64
+            artifact: release-macos-x64
+          - name: Package Windows x64 unsigned
+            os: windows-2022
+            arch: x64
+            artifact: release-windows-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: "0.10.9"
+          enable-cache: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - run: uv python install 3.12
+      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: npm ci --prefix apps/desktop
+      - run: uv run pyinstaller --noconfirm --clean --distpath ../dist --workpath ../build EquiSeekSidecar.spec
+        working-directory: packaging
+      - name: Verify frozen sidecar (macOS)
+        if: runner.os == 'macOS'
+        run: dist/equiseek-sidecar --self-test
+      - name: Verify frozen sidecar (Windows)
+        if: runner.os == 'Windows'
+        run: dist\equiseek-sidecar.exe --self-test
+      - run: npm --prefix apps/desktop run make -- --arch=${{ matrix.arch }}
+      - name: Verify packaged sidecar (macOS)
+        if: runner.os == 'macOS'
+        run: find apps/desktop/out -path '*/Contents/Resources/equiseek-sidecar' -type f -exec {} --self-test \;
+      - name: Verify packaged sidecar (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sidecar = Get-ChildItem apps/desktop/out -Recurse -Filter equiseek-sidecar.exe | Select-Object -First 1
+          if (-not $sidecar) { throw "Packaged sidecar was not found" }
+          & $sidecar.FullName --self-test
+      - name: Verify embedded compliance bundle
+        shell: bash
+        run: |
+          test -f build/release-compliance/LICENSE
+          test -f build/release-compliance/NOTICE
+          test -f build/release-compliance/THIRD_PARTY_LICENSE_INDEX.json
+          test -f build/release-compliance/sbom-python.cdx.json
+          test -f build/release-compliance/sbom-electron.cdx.json
+      - name: Stage macOS release asset
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          package_path="$(find apps/desktop/out/make -type f -name '*.zip' -print -quit)"
+          test -n "$package_path"
+          version="${GITHUB_REF_NAME#v}"
+          cp "$package_path" "release-assets/EquiSeek-macOS-${{ matrix.arch }}-${version}-unsigned.zip"
+          app_path="$(find apps/desktop/out -maxdepth 3 -type d -name 'EquiSeek.app' -print -quit)"
+          test -n "$app_path"
+          if codesign -dvv "$app_path" 2>&1 | grep -q 'Authority=Developer ID Application'; then
+            echo "Unexpected Developer ID signature in unsigned release" >&2
+            exit 1
+          fi
+      - name: Stage Windows release asset
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          $setup = Get-ChildItem apps/desktop/out/make -Recurse -Filter "*Setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "Squirrel Setup.exe was not found" }
+          $signature = Get-AuthenticodeSignature $setup.FullName
+          if ($signature.Status -ne "NotSigned") { throw "Expected an unsigned Setup.exe, got $($signature.Status)" }
+          $version = $env:GITHUB_REF_NAME.Substring(1)
+          Copy-Item $setup.FullName "release-assets/EquiSeek-Windows-x64-$version-unsigned-Setup.exe"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub prerelease
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Generate SHA-256 checksums
+        shell: bash
+        run: |
+          test "$(find release-assets -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 3
+          (cd release-assets && sha256sum EquiSeek-* | sort -k2 > SHA256SUMS)
+          cat release-assets/SHA256SUMS
+      - name: Create or update unsigned alpha prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          title="EquiSeek ${GITHUB_REF_NAME} — Unsigned Alpha"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.1.md
+            gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.1.md
+          fi
