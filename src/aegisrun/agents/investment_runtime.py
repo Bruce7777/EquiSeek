@@ -506,12 +506,6 @@ class InvestmentAgentRuntime:
                     agent_name="artifact-agent",
                 ),
             )
-            final_answer = self._with_run_metadata(
-                final_answer,
-                active,
-                answer_mode=answer_mode,
-                trace=trace,
-            )
             trace_path = self._write_artifact(
                 paths.artifacts,
                 "investment-agent-trace.md",
@@ -2355,35 +2349,6 @@ class InvestmentAgentRuntime:
                 ]
             )
         return "\n".join(lines)
-
-    @staticmethod
-    def _with_run_metadata(
-        answer: str,
-        active: dict[str, SkillPackage],
-        *,
-        answer_mode: str,
-        trace: Sequence[InvestmentAgentTraceStep],
-    ) -> str:
-        active_labels = {
-            package.summary.name: f"`{package.summary.name}`（{package.summary.provider}）"
-            for package in active.values()
-        }
-        used_names = dict.fromkeys(skill_name for step in trace for skill_name in step.skill_names)
-        skills = (
-            "、".join(active_labels.get(name, f"`{name}`（研究流水线）") for name in used_names)
-            or "、".join(
-                f"`{package.summary.name}`（{package.summary.provider}）"
-                for package in active.values()
-            )
-            or "无（仅平台固定能力）"
-        )
-        mode = "DeepSeek 动态规划" if answer_mode == "deepseek" else "本地确定性规划"
-        return (
-            f"> **本轮 Skill**：{skills}  \n"
-            f"> **执行方式**：{mode} · {len(trace)} 个可审阅 Trace 步骤  \n"
-            "> **查看依据**：右侧 Trace 可逐步查看 Skill、工具、规则门控和证据文件。\n\n"
-            f"{answer}"
-        )
 
     @staticmethod
     def _report_markdown(

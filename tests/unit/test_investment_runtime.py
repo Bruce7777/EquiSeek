@@ -90,7 +90,9 @@ async def test_local_runtime_reads_macro_and_persists_workspace_artifact(tmp_pat
     assert "Content-Security-Policy" in html_text
     assert "<script" not in html_text
     assert "html-research-report" in html_text
-    assert "本轮 Skill" in result.answer
+    assert "本轮 Skill" not in result.answer
+    assert "执行方式" not in result.answer
+    assert "查看依据" not in result.answer
     assert any(step.stage == "skill" for step in result.trace)
     assert progress[0]["kind"] == "run-started"
     assert progress[-1]["kind"] == "run-ended"

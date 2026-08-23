@@ -98,13 +98,13 @@ make desktop-package
 
 ## 下载并安装未签名 Alpha
 
-不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.4) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
+不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
 
 | 平台 | 文件名 |
 | --- | --- |
-| Apple Silicon Mac | [下载 arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-arm64-0.2.0-alpha.4-unsigned.zip) |
-| Intel Mac | [下载 x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-x64-0.2.0-alpha.4-unsigned.zip) |
-| Windows 10/11 x64 | [下载 x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-Windows-x64-0.2.0-alpha.4-unsigned-Setup.exe) |
+| Apple Silicon Mac | [下载 arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-arm64-0.2.0-alpha.5-unsigned.zip) |
+| Intel Mac | [下载 x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-x64-0.2.0-alpha.5-unsigned.zip) |
+| Windows 10/11 x64 | [下载 x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-Windows-x64-0.2.0-alpha.5-unsigned-Setup.exe) |
 
 如果 Releases 页面没有这些文件，说明构建尚未完成；不要把 GitHub 自动生成的 Source code 压缩包当作安装包。本阶段没有 Apple/Windows 证书，macOS Gatekeeper 和 Windows SmartScreen 可能警告或阻止启动，杀毒软件也可能重点扫描内嵌的 Python sidecar，企业管理设备甚至可能完全禁止安装。请只从本仓库下载、先核对 `SHA256SUMS`，并按[未签名桌面版安装指南](docs/installing-unsigned-desktop.md)操作。未来取得证书后可另行发布签名稳定版；详见[桌面发布](docs/releasing-desktop.md)。
 
@@ -156,7 +156,7 @@ Fake Model 是可重复、无需外部模型凭据的发布基线。API 请求�
 
 ## 数据、模型与安全边界
 
-- 桌面应用无需模型 API Key 也能运行；本地规则、持仓、Skill、工作区和历史记录仍可使用。
+- 未配置模型 API Key 时，桌面应用只运行透明的本地固定规则分析，不会调用或冒充大模型；输入区会持续标明当前状态并提供直达设置的入口。需要动态语言理解和回答时，请配置用户自己的 DeepSeek 或兼容供应商 Key。
 - BaoStock 提供无需 Token 的公开历史行情；Tushare 是独立可选数据源，需要自己的 Token。
 - 当前个股研究范围为中国内地 A 股及已支持的境内指数、基金；美股、港股、日股、欧股、全球指数、外汇、期货和加密资产尚未接入。
 - 宏观研究会联网核验官方页面；网络失败时只能回退到最近一次完整本地快照，并显示时效和失效状态。

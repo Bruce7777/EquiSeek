@@ -98,13 +98,13 @@ Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS a
 
 ## Download and install the unsigned Alpha
 
-Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.4). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
+Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
 
 | Platform | Asset |
 | --- | --- |
-| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-arm64-0.2.0-alpha.4-unsigned.zip) |
-| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-x64-0.2.0-alpha.4-unsigned.zip) |
-| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-Windows-x64-0.2.0-alpha.4-unsigned-Setup.exe) |
+| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-arm64-0.2.0-alpha.5-unsigned.zip) |
+| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-x64-0.2.0-alpha.5-unsigned.zip) |
+| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-Windows-x64-0.2.0-alpha.5-unsigned-Setup.exe) |
 
 If the Releases page has no matching assets, the build has not completed—do not download an arbitrary source archive and treat it as an installer. These Alpha packages are not signed or notarized: macOS Gatekeeper and Windows SmartScreen can warn or block them, antivirus software may inspect the bundled Python sidecar, and managed devices may forbid installation completely. Download only from this repository, verify `SHA256SUMS`, and follow the [unsigned desktop installation guide](docs/installing-unsigned-desktop.md). A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
 
@@ -156,7 +156,7 @@ The fake model is a repeatable release baseline that needs no external model cre
 
 ## Data, models, and security boundaries
 
-- The desktop app works without a model API key; local rules, portfolio data, Skills, workspaces, and history remain available.
+- Without a model API key, the desktop app runs only transparent fixed-rule analysis; it does not call or imitate an LLM. The composer shows this state and links directly to Settings. Configure your own DeepSeek or compatible-provider key for dynamic language understanding and answers.
 - BaoStock supplies public historical market data without a token. Tushare is a separate optional source and requires its own token.
 - Current stock research covers mainland China A-shares plus supported domestic indices and funds. US, Hong Kong, Japanese and European equities, global indices, foreign exchange, futures, and crypto assets are not yet connected.
 - Macro research verifies official web pages. On network failure it can only fall back to the latest complete local snapshot and must display its freshness and invalidation state.

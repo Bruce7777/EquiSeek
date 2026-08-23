@@ -18,6 +18,32 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.queryByRole('textbox', { name: /账号|用户名|密码/ })).not.toBeInTheDocument();
   });
 
+  it('makes fixed-rule mode explicit and guides users to configure DeepSeek', async () => {
+    const user = userEvent.setup();
+    await api.credentials.clear('deepseek');
+    await api.credentials.clear('custom');
+    await api.settings.patch({ modelProvider: 'deepseek-official', enableDeepSeek: false });
+    render(<App />);
+
+    expect(await screen.findByText('尚未配置 DeepSeek API Key')).toBeVisible();
+    expect(screen.getByRole('status', { name: '大模型配置状态' })).toHaveTextContent('当前提问只会使用本地固定规则');
+    expect(screen.getByText(/固定规则 · 未调用大模型/)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: '前往设置配置' }));
+    expect(await screen.findByRole('heading', { name: '设置' })).toBeVisible();
+    expect(screen.getByRole('switch', { name: '启用 DeepSeek 推理' })).toBeDisabled();
+    await user.type(screen.getByLabelText('DeepSeek API Key'), 'test-deepseek-key');
+    await user.click(screen.getByRole('button', { name: '保存模型 API Key' }));
+    await waitFor(() => expect(screen.getByRole('switch', { name: '启用 DeepSeek 推理' })).toHaveAttribute('aria-checked', 'true'));
+
+    await user.click(screen.getByTestId('nav-agent'));
+    expect(screen.queryByRole('status', { name: '大模型配置状态' })).not.toBeInTheDocument();
+    expect(screen.getByText(/联网研究已开启 · V4 Flash/)).toBeVisible();
+
+    await api.credentials.clear('deepseek');
+    await api.settings.patch({ enableDeepSeek: false });
+  });
+
   it('shows and opens the official source repository from the sidebar and settings', async () => {
     const user = userEvent.setup();
     const openRepository = vi.spyOn(api.system, 'openRepository');
@@ -58,6 +84,9 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.getByRole('heading', { name: '600050.SH 买入条件研究' })).toBeInTheDocument();
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('动作：等待')).toBeInTheDocument();
+    expect(screen.getByText('固定规则分析 · 未调用大模型')).toBeInTheDocument();
+    expect(screen.queryByText(/本轮 Skill/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/查看依据/)).not.toBeInTheDocument();
     expect(screen.getAllByText('生成 HTML 研究报告')).toHaveLength(2);
     expect(screen.getByText('investment-report.html')).toBeInTheDocument();
     expect(screen.getByTestId('inspector-skills')).toHaveTextContent('html-research-report');

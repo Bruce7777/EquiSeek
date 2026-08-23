@@ -61,6 +61,8 @@ Get-FileHash .\EquiSeek-Windows-*-unsigned-Setup.exe -Algorithm SHA256
 ## 5. 首次运行与数据
 
 - 应用无需注册账号，不连接券商，也不会自动下单。
+- 安装包不内置任何大模型 API Key。首次进入“投研助手”时，如果尚未配置 DeepSeek Key，输入区会显示“尚未配置 DeepSeek API Key”；此时仍可运行 BaoStock 行情和本地固定规则分析，但不会调用大模型，也不代表软件具有大模型对话能力。
+- 需要动态语言理解和回答时，点击提示中的“前往设置配置”，在“设置 → DeepSeek 模型与供应商”输入你自己申请的 Key，点击“保存并启用”。Key 只保存在当前电脑的操作系统安全存储中。
 - 首次使用联网行情、宏观研究或模型服务时，系统防火墙可能询问是否允许网络访问。
 - 用户数据默认保存在 `~/.equiseek/user-data`；卸载程序不会默认删除研究记录、设置和本地凭据。
 - Tushare、DeepSeek、Tavily 等 Token 需要用户自行申请，并受各自服务条款约束。
