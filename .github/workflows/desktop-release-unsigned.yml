@@ -83,6 +83,9 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
+      - name: Verify Windows sidecar portability
+        if: runner.os == 'Windows'
+        run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py tests/unit/test_harness_events.py
       - run: uv run pyinstaller --noconfirm --clean --distpath ../dist --workpath ../build EquiSeekSidecar.spec
         working-directory: packaging
       - name: Verify frozen sidecar (macOS)

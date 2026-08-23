@@ -45,12 +45,12 @@ jobs:
       - run: npm ci --prefix apps/desktop
       - name: Test sidecar portability (macOS)
         if: runner.os == 'macOS'
-        run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+        run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py tests/unit/test_harness_events.py
       - name: Test sidecar portability (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          uv run pytest -q --junitxml=windows-pytest.xml tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+          uv run pytest -q --junitxml=windows-pytest.xml tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py tests/unit/test_harness_events.py
           $testExit = $LASTEXITCODE
           if ($testExit -ne 0 -and (Test-Path windows-pytest.xml)) {
             [xml]$report = Get-Content windows-pytest.xml

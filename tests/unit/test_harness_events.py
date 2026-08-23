@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 
+import aegisrun.harness.events as events_module
 from aegisrun.harness import (
     EventCorruptionError,
     EventSource,
@@ -67,6 +69,24 @@ async def test_incomplete_tail_is_reported_as_corruption(tmp_path: Path) -> None
     store = WorkspaceEventStore(path, run_id="run-1")
     with pytest.raises(EventCorruptionError, match="incomplete"):
         await store.load()
+
+
+def test_event_flush_uses_a_windows_compatible_writable_descriptor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "events.jsonl"
+    path.write_text("{}\n", encoding="utf-8")
+    flags: list[int] = []
+    real_open = os.open
+
+    def tracked_open(value: str | bytes | os.PathLike[str], open_flags: int) -> int:
+        flags.append(open_flags)
+        return real_open(value, open_flags)
+
+    monkeypatch.setattr(events_module.os, "open", tracked_open)
+    WorkspaceEventStore(path, run_id="run-1")._flush_sync()
+
+    assert flags == [os.O_RDWR]
 
 
 @pytest.mark.asyncio

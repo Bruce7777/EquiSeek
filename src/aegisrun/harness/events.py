@@ -316,7 +316,9 @@ class WorkspaceEventStore:
         await asyncio.to_thread(self._flush_sync)
 
     def _flush_sync(self) -> None:
-        descriptor = os.open(self.path, os.O_RDONLY)
+        # Windows implements fsync through _commit(), which rejects a
+        # read-only descriptor with EBADF even though POSIX accepts it.
+        descriptor = os.open(self.path, os.O_RDWR)
         try:
             os.fsync(descriptor)
         finally:
