@@ -6,7 +6,7 @@ Security fixes target the latest `0.2.x` release during the alpha period.
 
 ## Reporting
 
-Do not disclose a vulnerability in a public issue. Submit it through [GitHub Security Advisories](https://github.com/Bruce7777/EquiSeek/security/advisories/new). Private vulnerability reporting will be enabled when the repository becomes public; until then, repository collaborators can use the same advisory workspace.
+Do not disclose a vulnerability in a public issue. Submit it through [GitHub Security Advisories](https://github.com/Bruce7777/EquiSeek/security/advisories/new). The repository is public; reporting through GitHub requires signing in. Do not fall back to a public Issue when a report contains vulnerability details.
 
 Include the affected revision, reproduction steps, impact, and any proposed mitigation. Maintainers will acknowledge a complete report within seven days and coordinate disclosure after a fix is available. Do not send secrets or personal financial data with a report.
 

@@ -21,6 +21,16 @@
 - 可选模型：没有 API Key 时仍能使用确定性本地研究；需要语言推理时可配置 DeepSeek 或 OpenAI 兼容供应商。
 - Agent Harness：可恢复 Run、持久 DAG、审批、工具权限、幂等副作用、事件回放、Artifact、隔离工作区和确定性评测。
 
+## 界面预览
+
+### 求衡投研助手
+
+![求衡投研助手及集中在输入区内的工作区、模型、权限和 Skills 工具栏](docs/images/research-assistant.png)
+
+### 个股研究与决策账本
+
+![带本地决策账本、完整研究结论和可审计运行检查器的个股研究页](docs/images/decision-journal.png)
+
 ## 快速开始
 
 | 目的 | 命令 | 是否需要 PostgreSQL |
@@ -86,7 +96,17 @@ make desktop-package
 
 产物位于 `apps/desktop/out/make/`：macOS 本地无证书构建为未签名 ZIP，Windows 为未签名 Squirrel Setup.exe。PyInstaller sidecar 与 Electron 应用必须在目标架构上原生构建。
 
-不会编程的试用者可从 [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases) 下载三架构未签名 Alpha。请只下载文件名包含 `unsigned` 的对应平台产物，先核对 `SHA256SUMS`，并阅读 Release 中的 Gatekeeper/SmartScreen 提示。未来取得证书后可另行发布签名稳定版；详见[桌面发布](docs/releasing-desktop.md)。
+## 下载并安装未签名 Alpha
+
+不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.3) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
+
+| 平台 | 文件名 |
+| --- | --- |
+| Apple Silicon Mac | [下载 arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-arm64-0.2.0-alpha.3-unsigned.zip) |
+| Intel Mac | [下载 x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-x64-0.2.0-alpha.3-unsigned.zip) |
+| Windows 10/11 x64 | [下载 x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-Windows-x64-0.2.0-alpha.3-unsigned-Setup.exe) |
+
+如果 Releases 页面没有这些文件，说明构建尚未完成；不要把 GitHub 自动生成的 Source code 压缩包当作安装包。本阶段没有 Apple/Windows 证书，macOS Gatekeeper 和 Windows SmartScreen 可能警告或阻止启动，杀毒软件也可能重点扫描内嵌的 Python sidecar，企业管理设备甚至可能完全禁止安装。请只从本仓库下载、先核对 `SHA256SUMS`，并按[未签名桌面版安装指南](docs/installing-unsigned-desktop.md)操作。未来取得证书后可另行发布签名稳定版；详见[桌面发布](docs/releasing-desktop.md)。
 
 也可以不使用 Make：
 

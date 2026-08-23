@@ -18,16 +18,18 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.queryByRole('textbox', { name: /账号|用户名|密码/ })).not.toBeInTheDocument();
   });
 
-  it('shows and opens the official source repository from settings', async () => {
+  it('shows and opens the official source repository from the sidebar and settings', async () => {
     const user = userEvent.setup();
     const openRepository = vi.spyOn(api.system, 'openRepository');
     render(<App />);
     await screen.findByText('把研究问题交给求衡');
 
+    await user.click(screen.getByRole('button', { name: '在 GitHub 查看 EquiSeek' }));
+    expect(openRepository).toHaveBeenCalledTimes(1);
     await user.click(screen.getByTestId('nav-settings'));
     expect(screen.getByText('github.com/Bruce7777/EquiSeek')).toBeVisible();
     await user.click(screen.getByRole('button', { name: '访问 EquiSeek GitHub 仓库' }));
-    expect(openRepository).toHaveBeenCalledOnce();
+    expect(openRepository).toHaveBeenCalledTimes(2);
     openRepository.mockRestore();
   });
 
@@ -104,7 +106,7 @@ describe('EquiSeek desktop workspace', () => {
     render(<App />);
     await screen.findByText('把研究问题交给求衡');
 
-    expect(screen.getByLabelText('Agent 工作区')).toHaveValue('default');
+    expect(await screen.findByLabelText('Agent 工作区')).toHaveValue('default');
     await user.click(screen.getByRole('button', { name: '添加工作区' }));
     expect(screen.getByLabelText('Agent 工作区')).toHaveValue('ws-2');
     await user.selectOptions(screen.getByLabelText('Agent 模型'), 'deepseek-v4-pro');
@@ -114,6 +116,9 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.getByLabelText('Agent 工具权限')).toHaveValue('workspace-write');
     expect(screen.getByText('把研究问题交给求衡')).toBeInTheDocument();
     expect(screen.queryByText(/极简模式/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /管理 Skills/ }));
+    expect(screen.getByText('Skill 管理')).toBeVisible();
   });
 
   it('renders the complete structured stock decision instead of a summary card', async () => {

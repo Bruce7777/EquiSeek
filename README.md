@@ -21,6 +21,16 @@ The current desktop product is the light-themed Electron application under `apps
 - Optional models: deterministic local research works without an API key; DeepSeek or an OpenAI-compatible provider can be configured when language reasoning is needed.
 - Agent harness: recoverable runs, a persistent DAG, approvals, tool permissions, idempotent side effects, event replay, artifacts, isolated workspaces, and deterministic evaluations.
 
+## Interface preview
+
+### Research assistant
+
+![EquiSeek research assistant with the compact workspace, model, permission, and Skills toolbar](docs/images/research-assistant.png)
+
+### Stock research and decision journal
+
+![EquiSeek stock research workspace with the local decision journal and auditable run inspector](docs/images/decision-journal.png)
+
 ## Quick start
 
 | Goal | Command | PostgreSQL required |
@@ -86,7 +96,17 @@ make desktop-package
 
 Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS and an unsigned Squirrel Setup.exe on Windows. The PyInstaller sidecar and Electron app must be built natively on each target architecture.
 
-Non-developer testers can download the three unsigned Alpha builds from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases). Download only the matching asset whose name contains `unsigned`, verify it against `SHA256SUMS`, and read the Gatekeeper/SmartScreen warning in the Release. A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
+## Download and install the unsigned Alpha
+
+Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.3). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
+
+| Platform | Asset |
+| --- | --- |
+| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-arm64-0.2.0-alpha.3-unsigned.zip) |
+| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-x64-0.2.0-alpha.3-unsigned.zip) |
+| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-Windows-x64-0.2.0-alpha.3-unsigned-Setup.exe) |
+
+If the Releases page has no matching assets, the build has not completed—do not download an arbitrary source archive and treat it as an installer. These Alpha packages are not signed or notarized: macOS Gatekeeper and Windows SmartScreen can warn or block them, antivirus software may inspect the bundled Python sidecar, and managed devices may forbid installation completely. Download only from this repository, verify `SHA256SUMS`, and follow the [unsigned desktop installation guide](docs/installing-unsigned-desktop.md). A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
 
 To build without Make:
 

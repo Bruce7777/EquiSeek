@@ -286,7 +286,14 @@ function ResearchWorkspace({ networkEnabled, defaultSource, tushareConfigured, i
   );
 }
 
-function AgentWorkspace({ bootstrap, selectedSkills, onRun, onWorkspaceChange, onSettingsChange }: { bootstrap: BootstrapData; selectedSkills: Set<string>; onRun: (run: RunView | null, goal: string) => void; onWorkspaceChange: (items: WorkspaceSummary[]) => void; onSettingsChange: (settings: Record<string, unknown>) => void }) {
+function AgentWorkspace({ bootstrap, selectedSkills, onRun, onWorkspaceChange, onSettingsChange, onOpenSkills }: {
+  bootstrap: BootstrapData;
+  selectedSkills: Set<string>;
+  onRun: (run: RunView | null, goal: string) => void;
+  onWorkspaceChange: (items: WorkspaceSummary[]) => void;
+  onSettingsChange: (settings: Record<string, unknown>) => void;
+  onOpenSkills: () => void;
+}) {
   const [question, setQuestion] = useState(examples[0] ?? '');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; meta?: string; runId?: string | null; attachments?: string[] }>>([]);
   const [attachments, setAttachments] = useState<AttachmentSelection[]>([]);
@@ -434,16 +441,20 @@ function AgentWorkspace({ bootstrap, selectedSkills, onRun, onWorkspaceChange, o
         {running && <article className="message assistant"><div className="message-avatar"><AppLogo /></div><div className="message-body"><span className="message-author">求衡投研助手</span><div className="thinking"><LoaderCircle className="spin" size={16} />正在拆解目标并选择工具…</div></div></article>}
       </div>
       <div className="composer-wrap">
-        <div className="agent-runtime-bar" aria-label="Agent 运行配置">
-          <label><FolderOpen size={13} /><span>工作区</span><select aria-label="Agent 工作区" value={workspaceId} onChange={(event) => void selectWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <button className="runtime-add" aria-label="添加工作区" onClick={() => void chooseWorkspace()}><Plus size={13} /></button>
-          <label><Bot size={13} /><span>模型</span><select aria-label="Agent 模型" value={model} onChange={(event) => void selectModel(event.target.value)}>{modelOptions.map((item) => <option key={item.id} value={item.id} disabled={bootstrap.settings.modelProvider !== 'openai-compatible' && item.id === 'deepseek-v4-flash-vision-exp'}>{item.name} · {item.detail}</option>)}</select></label>
-          <label><Terminal size={13} /><span>工具权限</span><select aria-label="Agent 工具权限" value={workspacePermission} onChange={(event) => void selectPermission(event.target.value)}><option value="read-only">只读·Shell 受限</option><option value="workspace-write">可编辑·Shell + 文件</option></select></label>
-          <div className="runtime-skill-count"><WandSparkles size={13} />{selectedSkills.size ? `${selectedSkills.size} 个 Skill` : 'Skill 自动'}</div>
-        </div>
         <div className="composer">
           {attachments.length > 0 && <div className="attachment-tray">{attachments.map((item) => <span key={item.token}><FileCode2 size={12} />{item.name}<button aria-label={`移除附件 ${item.name}`} onClick={() => setAttachments((current) => current.filter((entry) => entry.token !== item.token))}><X size={11} /></button></span>)}</div>}
-          {loadingThread ? <div className="composer-loading"><LoaderCircle className="spin" size={14} />正在准备本地会话…</div> : <><textarea aria-label="向求衡投研助手提问" value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submit(); } }} placeholder="描述目标，例如：结合最新数据研究 600050.SH 的买入条件" rows={2} disabled={!activeThreadId} /><div className="composer-actions"><button className="icon-text-button" onClick={() => void chooseAttachments()} disabled={running}><Plus size={16} />添加文件</button><button aria-label="发送给求衡投研助手" data-testid="send-agent" className="send-button" onClick={submit} disabled={running || !question.trim() || !activeThreadId}>{running ? <Square size={14} /> : <ArrowUpRight size={18} />}</button></div></>}
+          {loadingThread ? <div className="composer-loading"><LoaderCircle className="spin" size={14} />正在准备本地会话…</div> : <><textarea aria-label="向求衡投研助手提问" value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submit(); } }} placeholder="描述目标，例如：结合最新数据研究 600050.SH 的买入条件" rows={2} disabled={!activeThreadId} /><div className="composer-actions">
+            <div className="composer-tool-row" aria-label="Agent 运行配置">
+              <button className="icon-text-button" aria-label="添加文件" onClick={() => void chooseAttachments()} disabled={running}><Plus size={15} /><span>文件</span></button>
+              <span className="composer-tool-divider" aria-hidden="true" />
+              <label className="runtime-chip runtime-chip-workspace" title="切换工作区"><FolderOpen size={14} /><select aria-label="Agent 工作区" value={workspaceId} onChange={(event) => void selectWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><ChevronDown size={12} aria-hidden="true" /></label>
+              <button type="button" className="runtime-chip-icon" aria-label="添加工作区" title="添加工作区" onClick={() => void chooseWorkspace()}><Plus size={14} /></button>
+              <label className="runtime-chip runtime-chip-model" title="切换模型"><Bot size={14} /><select aria-label="Agent 模型" value={model} onChange={(event) => void selectModel(event.target.value)}>{modelOptions.map((item) => <option key={item.id} value={item.id} disabled={bootstrap.settings.modelProvider !== 'openai-compatible' && item.id === 'deepseek-v4-flash-vision-exp'}>{item.name}</option>)}</select><ChevronDown size={12} aria-hidden="true" /></label>
+              <label className="runtime-chip runtime-chip-permission" title={workspacePermission === 'workspace-write' ? '可编辑工作区文件' : '只读安全模式'}><Terminal size={14} /><select aria-label="Agent 工具权限" value={workspacePermission} onChange={(event) => void selectPermission(event.target.value)}><option value="read-only">只读</option><option value="workspace-write">可编辑</option></select><ChevronDown size={12} aria-hidden="true" /></label>
+              <button type="button" className="runtime-chip runtime-chip-skills" aria-label={`管理 Skills，${selectedSkills.size ? `已选 ${selectedSkills.size} 个` : '当前自动选择'}`} title="管理本轮 Skills" onClick={onOpenSkills}><WandSparkles size={14} /><span>{selectedSkills.size ? `${selectedSkills.size} Skills` : 'Skills'}</span></button>
+            </div>
+            <button aria-label="发送给求衡投研助手" data-testid="send-agent" className="send-button" onClick={submit} disabled={running || !question.trim() || !activeThreadId}>{running ? <Square size={14} /> : <ArrowUpRight size={18} />}</button>
+          </div></>}
         </div>
         <p className="disclaimer">研究工具不连接券商，不自动下单；结论需结合数据时效与个人风险预算。</p>
       </div>
@@ -626,10 +637,13 @@ export function App() {
       <aside className="sidebar">
         <div className="brand"><AppLogo /><div><strong>EquiSeek 求衡</strong><span>智能投研平台</span></div></div>
         <nav aria-label="主导航">{navigation.map((item) => { const Icon = item.icon; return <button aria-label={item.label} key={item.id} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)} data-testid={`nav-${item.id}`}><Icon size={18} /><span>{item.label}</span>{runContexts[item.id].run?.status === 'running' && <i className="nav-running" />}</button>; })}</nav>
-        <div className="sidebar-bottom"><div className="workspace-switch"><div className="workspace-avatar">QS</div><label><span>当前工作区</span><select aria-label="当前工作区" value={activeWorkspace(bootstrap.workspaces)?.id || ''} onChange={(event) => void selectGlobalWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button aria-label="新增工作区" onClick={() => void addGlobalWorkspace()}><Plus size={14} /></button></div><div className="local-status"><span><i />Sidecar 已连接</span><small>协议 v1.0</small></div></div>
+        <div className="sidebar-bottom">
+          <button className="sidebar-repository-link" aria-label="在 GitHub 查看 EquiSeek" title="在 GitHub 查看 EquiSeek" onClick={() => void api.system.openRepository()}><GitFork size={14} /><span>GitHub 开源仓库</span><ExternalLink size={12} /></button>
+          <div className="workspace-switch"><div className="workspace-avatar">QS</div><label><span>当前工作区</span><select aria-label="当前工作区" value={activeWorkspace(bootstrap.workspaces)?.id || ''} onChange={(event) => void selectGlobalWorkspace(event.target.value)}>{bootstrap.workspaces.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button aria-label="新增工作区" onClick={() => void addGlobalWorkspace()}><Plus size={14} /></button></div><div className="local-status"><span><i />Sidecar 已连接</span><small>协议 v1.0</small></div>
+        </div>
       </aside>
       <main className="main-content">
-        <section className="view-pane" hidden={view !== 'agent'}><AgentWorkspace bootstrap={bootstrap} selectedSkills={selectedSkills} onRun={(run, nextGoal) => startRun('agent', run, nextGoal)} onWorkspaceChange={updateWorkspaces} onSettingsChange={(settings) => setBootstrap((current) => current ? { ...current, settings } : current)} /></section>
+        <section className="view-pane" hidden={view !== 'agent'}><AgentWorkspace bootstrap={bootstrap} selectedSkills={selectedSkills} onRun={(run, nextGoal) => startRun('agent', run, nextGoal)} onWorkspaceChange={updateWorkspaces} onSettingsChange={(settings) => setBootstrap((current) => current ? { ...current, settings } : current)} onOpenSkills={() => setView('skills')} /></section>
         <section className="view-pane" hidden={view !== 'research'}><ResearchWorkspace networkEnabled={Boolean(bootstrap.settings.enableNetwork)} defaultSource={String(bootstrap.settings.dataSource || 'baostock')} tushareConfigured={Boolean(bootstrap.credentials?.tushare)} initialRuns={bootstrap.recentRuns} onRun={(run, nextGoal) => startRun('research', run, nextGoal)} /></section>
         <section className="view-pane" hidden={view !== 'portfolio'}><PortfolioPage initial={bootstrap.portfolio} /></section>
         <section className="view-pane" hidden={view !== 'candidates'}><div className="workspace-page"><header className="page-header"><div><span className="eyebrow">CANDIDATE WORKBENCH</span><h1>候选池</h1><p>把本地持仓与自选交给 Agent，按显式策略 Skill 形成排序。</p></div></header><div className="candidate-cta"><div><ListChecks size={24} /><h2>候选池由 Agent 任务驱动</h2><p>当前有 {bootstrap.portfolio.positions.length + bootstrap.portfolio.watchlist.length} 个可研究标的。空候选池会直接返回，不启动无意义的网络请求。</p></div><button className="primary-button" onClick={() => setView('agent')}>前往 Agent 扫描 <ArrowUpRight size={16} /></button></div></div></section>

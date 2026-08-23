@@ -4,6 +4,14 @@
 
 桌面版默认使用无需 Token 的 BaoStock 公开历史日线。也可以使用自己的 Tushare Token，或选择明确标记为“非真实行情”的离线模拟数据。全部指标、投资动作和方向情景在本地确定性计算；可选模型用于解释和编排，不能覆盖本地证券规则证据。
 
+![求衡投研助手界面](images/research-assistant.png)
+
+![个股研究、决策账本与运行检查器](images/decision-journal.png)
+
+不会编程的用户请从 GitHub Releases 下载已经编译好的未签名安装包，并先阅读[未签名桌面版安装指南](installing-unsigned-desktop.md)。Releases 中只有 Source code 而没有带 `unsigned` 的三个平台资产时，表示自动构建尚未成功完成，不能视为可安装发布。
+
+客户端侧边栏底部和“设置 → 开源项目”均提供 GitHub 入口；点击后会使用系统默认浏览器打开官方仓库，可查看源码、下载 Release、提交问题或参与贡献。
+
 ## 从源码运行
 
 要求 Python 3.12、[uv](https://docs.astral.sh/uv/)、Node.js 22+ 和 npm。

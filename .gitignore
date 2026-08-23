@@ -20,3 +20,7 @@ __pycache__/
 /artifacts/
 workspaces/
 run-report.html
+# Internal iteration artifacts belong in the private development repository.
+/docs/design/
+/docs/test/
+/docs/sql/
