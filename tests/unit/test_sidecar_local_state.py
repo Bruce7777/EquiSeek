@@ -307,7 +307,7 @@ resources: []
             break
         await asyncio.sleep(0.02)
 
-    assert view["status"] == "succeeded", view
+    assert view["status"] == "succeeded", view.get("error")
     answer = view["result"]["answer"]
     assert "已按本轮选择的 Skill 读取规则" in answer
     assert "经营现金流能否覆盖资本开支" in answer
