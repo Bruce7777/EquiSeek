@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { App } from './App';
+import { api } from './bridge';
 
 describe('EquiSeek desktop workspace', () => {
   it('loads a local-first agent workspace without login', async () => {
@@ -14,6 +16,19 @@ describe('EquiSeek desktop workspace', () => {
     expect(screen.getByText('Sidecar 已连接')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /登录|注册/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: /账号|用户名|密码/ })).not.toBeInTheDocument();
+  });
+
+  it('shows and opens the official source repository from settings', async () => {
+    const user = userEvent.setup();
+    const openRepository = vi.spyOn(api.system, 'openRepository');
+    render(<App />);
+    await screen.findByText('把研究问题交给求衡');
+
+    await user.click(screen.getByTestId('nav-settings'));
+    expect(screen.getByText('github.com/Bruce7777/EquiSeek')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: '访问 EquiSeek GitHub 仓库' }));
+    expect(openRepository).toHaveBeenCalledOnce();
+    openRepository.mockRestore();
   });
 
   it('shows replaceable user skills and makes the selection visible', async () => {

@@ -5,6 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 import { SidecarSupervisor } from './sidecar';
 import { CredentialStore, type CredentialName } from './credentials';
+import { REPOSITORY_URL } from '../shared/contracts';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -40,6 +41,11 @@ function registerIpc(): void {
     return { ...result, credentials: await credentialStore.status() };
   });
   handle('aegisrun:system:health', 'system.health');
+  ipcMain.handle('aegisrun:system:open-repository', async (event) => {
+    if (!trustedSender(event)) throw new Error('IPC sender rejected');
+    await shell.openExternal(REPOSITORY_URL);
+    return REPOSITORY_URL;
+  });
   handle('aegisrun:settings:patch', 'settings.patch');
   handle('aegisrun:workspace:list', 'workspace.list');
   handle('aegisrun:workspace:add', 'workspace.add');

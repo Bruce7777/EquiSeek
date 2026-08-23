@@ -1,5 +1,7 @@
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
+export const REPOSITORY_URL = 'https://github.com/Bruce7777/EquiSeek' as const;
+
 export interface RunEvent {
   runId: string;
   seq: number;
@@ -83,6 +85,7 @@ export interface DesktopApi {
   system: {
     bootstrap(): Promise<BootstrapData>;
     health(): Promise<Record<string, unknown>>;
+    openRepository(): Promise<string>;
   };
   settings: { patch(input: Record<string, unknown>): Promise<Record<string, unknown>> };
   workspaces: {

@@ -1,10 +1,11 @@
-import type {
-  BootstrapData,
-  ConversationState,
-  DesktopApi,
-  PortfolioBook,
-  RunEvent,
-  RunView,
+import {
+  REPOSITORY_URL,
+  type BootstrapData,
+  type ConversationState,
+  type DesktopApi,
+  type PortfolioBook,
+  type RunEvent,
+  type RunView,
 } from '../shared/contracts';
 
 const skills = [
@@ -516,6 +517,7 @@ const browserApi: DesktopApi = {
   system: {
     bootstrap: async () => ({ ...bootstrap, portfolio, recentRuns: [...runs.values()], conversations: conversationItems() }),
     health: async () => ({ status: 'ok', protocolVersion: '1.0' }),
+    openRepository: async () => REPOSITORY_URL,
   },
   settings: {
     patch: async (input) => Object.assign(bootstrap.settings, input),

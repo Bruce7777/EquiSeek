@@ -8,6 +8,7 @@ const api: DesktopApi = {
   system: {
     bootstrap: () => invoke('aegisrun:system:bootstrap'),
     health: () => invoke('aegisrun:system:health'),
+    openRepository: () => invoke('aegisrun:system:open-repository'),
   },
   settings: { patch: (input) => invoke('aegisrun:settings:patch', input) },
   workspaces: {

@@ -30,7 +30,7 @@
 
 ## Windows 凭据
 
-首选满足当前 CA 私钥硬件要求的证书或云签名服务。仓库当前提供 PFX 注入路径，适合已有合规 PFX 的 CI；若改用 Azure Trusted Signing，应替换 Forge 的 `windowsSign` hook，不能把云凭据写入仓库。
+首选满足当前 CA 私钥硬件要求的云签名服务。新签发的公开信任代码签名证书通常不会提供可导出的 PFX；USB 硬件令牌需要连接令牌的自托管 Windows runner，不适合 GitHub 托管 runner。仓库当前的 PFX 注入路径仅用于已有且确实允许导出的合规证书；若使用 Microsoft Artifact Signing 或其他云签名服务，应替换 Forge 的 `windowsSign` hook，并通过 GitHub OIDC 或该服务的短期凭据授权，不能把长期云密钥写入仓库。
 
 PFX 路径需要：
 
