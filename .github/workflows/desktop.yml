@@ -43,7 +43,26 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
-      - run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+      - name: Test sidecar portability (macOS)
+        if: runner.os == 'macOS'
+        run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+      - name: Test sidecar portability (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          uv run pytest -q --junitxml=windows-pytest.xml tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
+          $testExit = $LASTEXITCODE
+          if ($testExit -ne 0 -and (Test-Path windows-pytest.xml)) {
+            [xml]$report = Get-Content windows-pytest.xml
+            $failedCases = $report.testsuites.testsuite.testcase | Where-Object { $_.failure -or $_.error }
+            foreach ($case in $failedCases) {
+              $node = if ($case.failure) { $case.failure } else { $case.error }
+              $detail = [string]$node.InnerText
+              $detail = $detail.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error title=pytest $($case.classname).$($case.name)::$detail"
+            }
+          }
+          exit $testExit
       - run: npm --prefix apps/desktop run lint
       - run: npm --prefix apps/desktop run typecheck
       - run: npm --prefix apps/desktop run test
