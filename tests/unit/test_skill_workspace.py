@@ -49,6 +49,27 @@ def test_workspace_can_run_without_any_builtin_skills(tmp_path: Path) -> None:
     assert selected.packages[0].summary.provider == "user-1"
 
 
+def test_windows_crlf_skill_markdown_is_supported(tmp_path: Path) -> None:
+    package = tmp_path / "windows-stock-filter"
+    package.mkdir()
+    content = (
+        "---\n"
+        "name: windows-stock-filter\n"
+        "description: Windows 用户自定义筛选规则\n"
+        "version: 1.0.0\n"
+        "---\n"
+        "按现金流和估值筛选。\n"
+    )
+    (package / "SKILL.md").write_bytes(content.replace("\n", "\r\n").encode("utf-8"))
+
+    workspace = SkillWorkspace(
+        SkillWorkspacePolicy(include_builtin=False, user_roots=(tmp_path,))
+    )
+    selected = workspace.select_for_turn("/windows-stock-filter 开始筛选")
+
+    assert selected.packages[0].instructions == "按现金流和估值筛选。"
+
+
 def test_disabled_skill_is_not_listed_or_implicitly_loaded(tmp_path: Path) -> None:
     workspace = SkillWorkspace(
         SkillWorkspacePolicy(

@@ -92,6 +92,10 @@ def _string_list(value: object, field: str) -> tuple[str, ...]:
 
 
 def _split_markdown(content: str) -> tuple[dict[str, Any], str]:
+    # User-authored Skills and Git checkouts on Windows commonly use CRLF.
+    # Parse a canonical newline form while keeping the original bytes for
+    # mutation detection and package audit hashes.
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
     if not content.startswith("---\n"):
         raise SkillValidationError("SKILL.md must start with YAML frontmatter")
     end = content.find("\n---\n", 4)
