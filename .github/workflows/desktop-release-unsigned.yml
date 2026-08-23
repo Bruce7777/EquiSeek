@@ -3,7 +3,7 @@ name: desktop-release-unsigned
 on:
   push:
     tags:
-      - "v0.2.0-alpha.3"
+      - "v0.2.0-alpha.4"
 
 concurrency:
   group: unsigned-release-${{ github.ref }}
@@ -169,8 +169,8 @@ jobs:
         run: |
           title="EquiSeek ${GITHUB_REF_NAME} — Unsigned Alpha"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.3.md
+            gh release edit "$GITHUB_REF_NAME" --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.4.md
             gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.3.md
+            gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --prerelease --title "$title" --notes-file docs/releases/v0.2.0-alpha.4.md
           fi

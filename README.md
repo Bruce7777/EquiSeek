@@ -98,13 +98,13 @@ Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS a
 
 ## Download and install the unsigned Alpha
 
-Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.3). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
+Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.4). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
 
 | Platform | Asset |
 | --- | --- |
-| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-arm64-0.2.0-alpha.3-unsigned.zip) |
-| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-macOS-x64-0.2.0-alpha.3-unsigned.zip) |
-| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.3/EquiSeek-Windows-x64-0.2.0-alpha.3-unsigned-Setup.exe) |
+| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-arm64-0.2.0-alpha.4-unsigned.zip) |
+| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-macOS-x64-0.2.0-alpha.4-unsigned.zip) |
+| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.4/EquiSeek-Windows-x64-0.2.0-alpha.4-unsigned-Setup.exe) |
 
 If the Releases page has no matching assets, the build has not completed—do not download an arbitrary source archive and treat it as an installer. These Alpha packages are not signed or notarized: macOS Gatekeeper and Windows SmartScreen can warn or block them, antivirus software may inspect the bundled Python sidecar, and managed devices may forbid installation completely. Download only from this repository, verify `SHA256SUMS`, and follow the [unsigned desktop installation guide](docs/installing-unsigned-desktop.md). A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
 
