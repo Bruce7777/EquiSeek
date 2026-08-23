@@ -27,6 +27,7 @@ def test_fresh_desktop_defaults_to_online_public_market_data(tmp_path) -> None:
 
 def test_new_installation_uses_equiseek_user_data_root(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.delenv("EQUISEEK_USER_DATA_ROOT", raising=False)
     monkeypatch.delenv("AEGISRUN_USER_DATA_ROOT", raising=False)
 
@@ -35,6 +36,7 @@ def test_new_installation_uses_equiseek_user_data_root(tmp_path, monkeypatch) ->
 
 def test_existing_legacy_user_data_is_discovered_during_upgrade(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.delenv("EQUISEEK_USER_DATA_ROOT", raising=False)
     monkeypatch.delenv("AEGISRUN_USER_DATA_ROOT", raising=False)
     legacy = tmp_path / ".aegisrun" / "user-data"

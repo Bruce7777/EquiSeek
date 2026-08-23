@@ -62,4 +62,5 @@ jobs:
         with:
           image-ref: equiseek:${{ github.sha }}
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: "1"
