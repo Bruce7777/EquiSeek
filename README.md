@@ -8,7 +8,7 @@ EquiSeek is a local-first, open-source AI investment research platform for indiv
 
 The current desktop product is the light-themed Electron application under `apps/desktop`. It does not require an account, connect to a brokerage, place orders, or promise returns.
 
-> **Version note:** `make desktop` starts the current Electron client. The former dark PySide/Qt client remains available through `make desktop-legacy` only for compatibility testing and is not the default release artifact.
+> **Desktop scope:** the public project contains one desktop client: the Electron application under `apps/desktop`. Python provides its sidecar and reusable research engine, not a second desktop UI.
 
 ## Highlights
 
@@ -31,7 +31,6 @@ The current desktop product is the light-themed Electron application under `apps
 | Start the local API and worker | `make local-api` / `make local-worker` | No, SQLite by default |
 | Run the local harness demo | `make bootstrap && make demo-fake` | No |
 | Run a multi-worker deployment | `make up` | Yes, started by Docker Compose |
-| Start the legacy Qt client | `make desktop-legacy` | No; compatibility only |
 
 ## Run the desktop app from source
 
@@ -57,14 +56,12 @@ make desktop
 On Windows PowerShell:
 
 ```powershell
-uv sync --frozen --extra desktop --extra desktop-build --extra dev
+uv sync --frozen --extra desktop-build --extra dev
 npm ci --prefix apps/desktop
 $env:EQUISEEK_REPO_ROOT = (Get-Location).Path
 $env:EQUISEEK_PYTHON = "$env:EQUISEEK_REPO_ROOT\.venv\Scripts\python.exe"
 npm --prefix apps/desktop run dev
 ```
-
-If the old dark Qt window appears, you probably ran `make desktop-legacy` or an outdated package. Pull the latest source and rebuild the Electron client.
 
 ## Build the desktop app
 
@@ -141,6 +138,7 @@ The fake model is a repeatable release baseline that needs no external model cre
 
 - The desktop app works without a model API key; local rules, portfolio data, Skills, workspaces, and history remain available.
 - BaoStock supplies public historical market data without a token. Tushare is a separate optional source and requires its own token.
+- Current stock research covers mainland China A-shares plus supported domestic indices and funds. US, Hong Kong, Japanese and European equities, global indices, foreign exchange, futures, and crypto assets are not yet connected.
 - Macro research verifies official web pages. On network failure it can only fall back to the latest complete local snapshot and must display its freshness and invalidation state.
 - DeepSeek, Tushare, Tavily, and other credentials are independent. Available models depend on the configured provider and endpoint.
 - User data defaults to `~/.equiseek/user-data`; override it with `EQUISEEK_USER_DATA_ROOT`.
@@ -193,19 +191,6 @@ make typecheck
 make test
 make test-fault
 ```
-
-## Legacy Qt client
-
-The old PySide/Qt client remains available to regress early rules and migrate data, but every entry point is marked `legacy`:
-
-```bash
-make desktop-legacy
-make desktop-legacy-smoke
-make desktop-legacy-build
-make desktop-legacy-package
-```
-
-New users and release packages should use the Electron client. The earlier Python desktop command is retained as an undocumented migration alias only.
 
 ## Documentation
 

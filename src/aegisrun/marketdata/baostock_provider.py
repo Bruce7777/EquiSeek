@@ -49,7 +49,7 @@ class BaoStockProvider:
                 import baostock as api_module  # type: ignore[import-untyped]
             except ModuleNotFoundError as error:
                 if error.name == "baostock":
-                    message = "BaoStock 未安装，请安装 EquiSeek desktop 依赖"
+                    message = "BaoStock 未安装，请重新安装 EquiSeek Python 依赖"
                 else:
                     message = f"BaoStock 运行依赖不完整：缺少 {error.name or '未知模块'}"
                 raise RuntimeError(message) from error

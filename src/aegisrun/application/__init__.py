@@ -1,4 +1,4 @@
-"""Framework-free application commands shared by desktop and future sidecar adapters."""
+"""Framework-free application commands shared by CLI and sidecar adapters."""
 
 from aegisrun.application.requests import (
     AdvisorChatRequest,

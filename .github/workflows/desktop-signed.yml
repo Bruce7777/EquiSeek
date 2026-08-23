@@ -22,7 +22,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - run: uv python install 3.12
-      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
       - run: uv run ruff check .
       - run: uv run mypy src
@@ -60,7 +60,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - run: uv python install 3.12
-      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
       - name: Require release secrets
         env:
@@ -159,7 +159,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - run: uv python install 3.12
-      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
       - name: Materialize Windows signing certificate
         shell: pwsh

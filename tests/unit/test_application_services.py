@@ -1,40 +1,13 @@
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
 from datetime import date
 
 import pytest
 
 from aegisrun.application import services
 from aegisrun.application.requests import ResearchRequest
-from aegisrun.desktop import workers
 from aegisrun.marketdata.models import AdjustmentMode
 from aegisrun.marketdata.providers import DemoMarketDataProvider
-
-
-def test_application_package_imports_without_qt_runtime() -> None:
-    environment = dict(os.environ)
-    environment.pop("QT_QPA_PLATFORM", None)
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "import sys; import aegisrun.application; "
-            "assert not any(name.startswith('PySide6') for name in sys.modules)",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        env=environment,
-    )
-
-    assert result.returncode == 0, result.stderr
-
-
-def test_desktop_workers_keep_request_import_compatibility() -> None:
-    assert workers.ResearchRequest is ResearchRequest
 
 
 def test_market_data_provider_factory_remains_framework_free() -> None:

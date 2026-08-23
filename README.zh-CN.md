@@ -8,7 +8,7 @@
 
 当前桌面产品是 `apps/desktop` 下的浅色 Electron 应用。它无需登录，不连接券商、不自动下单，也不承诺收益。
 
-> **版本提示：** `make desktop` 启动当前 Electron 客户端。原深色 PySide/Qt 客户端仅通过 `make desktop-legacy` 保留作兼容验证，不再是默认发布产物。
+> **桌面端范围：** 公开项目只包含 `apps/desktop` 下这一套 Electron 客户端。Python 提供其 sidecar 和可复用研究引擎，不再包含第二套桌面界面。
 
 ## 主要能力
 
@@ -31,7 +31,6 @@
 | 启动本地 API 与 Worker | `make local-api` / `make local-worker` | 否，默认 SQLite |
 | 运行本地 Harness 演示 | `make bootstrap && make demo-fake` | 否 |
 | 运行多 Worker 部署 | `make up` | 是，由 Docker Compose 启动 |
-| 启动旧 Qt 客户端 | `make desktop-legacy` | 否；仅兼容用途 |
 
 ## 从源码启动桌面应用
 
@@ -57,14 +56,12 @@ make desktop
 Windows PowerShell：
 
 ```powershell
-uv sync --frozen --extra desktop --extra desktop-build --extra dev
+uv sync --frozen --extra desktop-build --extra dev
 npm ci --prefix apps/desktop
 $env:EQUISEEK_REPO_ROOT = (Get-Location).Path
 $env:EQUISEEK_PYTHON = "$env:EQUISEEK_REPO_ROOT\.venv\Scripts\python.exe"
 npm --prefix apps/desktop run dev
 ```
-
-如果看到旧的深色 Qt 窗口，通常是执行了 `make desktop-legacy` 或使用了旧安装包。请拉取最新代码并重新构建 Electron 客户端。
 
 ## 构建桌面应用
 
@@ -141,6 +138,7 @@ Fake Model 是可重复、无需外部模型凭据的发布基线。API 请求�
 
 - 桌面应用无需模型 API Key 也能运行；本地规则、持仓、Skill、工作区和历史记录仍可使用。
 - BaoStock 提供无需 Token 的公开历史行情；Tushare 是独立可选数据源，需要自己的 Token。
+- 当前个股研究范围为中国内地 A 股及已支持的境内指数、基金；美股、港股、日股、欧股、全球指数、外汇、期货和加密资产尚未接入。
 - 宏观研究会联网核验官方页面；网络失败时只能回退到最近一次完整本地快照，并显示时效和失效状态。
 - DeepSeek、Tushare、Tavily 等凭据互不替代；可用模型取决于所配置的供应商与 Endpoint。
 - 用户数据默认位于 `~/.equiseek/user-data`，可通过 `EQUISEEK_USER_DATA_ROOT` 修改。
@@ -193,19 +191,6 @@ make typecheck
 make test
 make test-fault
 ```
-
-## 旧 Qt 客户端
-
-旧 PySide/Qt 客户端暂时保留，用于回归早期规则和迁移数据，但所有入口都带有 `legacy` 标识：
-
-```bash
-make desktop-legacy
-make desktop-legacy-smoke
-make desktop-legacy-build
-make desktop-legacy-package
-```
-
-新用户和发布包应使用 Electron 客户端。旧版 Python 桌面命令只作为未公开的迁移别名保留。
 
 ## 文档
 

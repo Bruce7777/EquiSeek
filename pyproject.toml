@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "aiosqlite>=0.20,<1",
   "alembic>=1.15,<2",
+  "baostock>=0.9.3,<1",
   "docker>=7.1,<8",
   "fastapi>=0.115,<1",
   "httpx>=0.28,<1",
@@ -44,11 +45,6 @@ postgres = [
   "langgraph-checkpoint-postgres>=3.0,<4",
   "psycopg[binary,pool]>=3.2,<4",
 ]
-desktop = [
-  "baostock>=0.9.3,<1",
-  "keyring>=25.6,<26",
-  "pyside6>=6.10,<6.12",
-]
 desktop-build = [
   "pyinstaller>=6.15,<7",
 ]
@@ -67,10 +63,8 @@ dev = [
 
 [project.scripts]
 aegisrun = "aegisrun.cli:app"
-aegisrun-desktop = "aegisrun.desktop.app:main"
 aegisrun-sidecar = "aegisrun.sidecar.server:main"
 equiseek = "aegisrun.cli:app"
-equiseek-desktop = "aegisrun.desktop.app:main"
 equiseek-sidecar = "aegisrun.sidecar.server:main"
 
 [project.urls]
@@ -96,7 +90,6 @@ branch = true
 source = ["aegisrun"]
 omit = [
   "src/aegisrun/cli.py",
-  "src/aegisrun/desktop/*",
 ]
 
 [tool.coverage.report]

@@ -1,6 +1,6 @@
 # EquiSeek A 股投资研究桌面版
 
-当前产品客户端位于 `apps/desktop`，使用 Electron + React 实现。`make desktop` 启动的就是这套浅色、无登录的 Agent 工作台；旧 PySide/Qt 暗色客户端仅由 `make desktop-legacy` 启动，不再是默认入口。
+当前产品唯一桌面客户端位于 `apps/desktop`，使用 Electron + React 实现。`make desktop` 启动的就是这套浅色、无登录的 Agent 工作台；Python 代码作为 sidecar 和研究引擎运行，不提供另一套桌面界面。
 
 桌面版默认使用无需 Token 的 BaoStock 公开历史日线。也可以使用自己的 Tushare Token，或选择明确标记为“非真实行情”的离线模拟数据。全部指标、投资动作和方向情景在本地确定性计算；可选模型用于解释和编排，不能覆盖本地证券规则证据。
 
@@ -20,6 +20,8 @@ make desktop
 - `公开历史数据（BaoStock，无需账号）`：默认，无 Token，沪深真实历史数据；依赖上游网络和服务可用性。
 - `Tushare 真实行情`：可选，需要与 DeepSeek Key 完全独立的 Tushare Token；在 Electron“设置”中保存。
 - `离线模拟数据`：无需网络，不是任何真实证券；用于体验和测试。
+
+当前 Tushare Provider 与界面一致，只接入中国内地 A 股、境内指数和基金。美股、港股、日股、欧股、全球指数、外汇、期货和加密资产仍属于后续路线图，当前版本不能查询或分析这些市场。
 
 如果选择 Tushare 但尚未配置它自己的 Token，客户端会解释 DeepSeek Key 与行情凭据的区别，并让用户改选 BaoStock 或离线模拟，而不是直接终止分析。北交所真实行情仍需支持该数据的行情源；离线模拟不能作为真实行情替代品。
 
@@ -140,8 +142,6 @@ make desktop-package     # macOS 未签名 ZIP / Windows 未签名 Squirrel，�
 ```
 
 PyInstaller sidecar 和 Electron 产物必须在目标架构原生构建。`desktop-package` 和 GitHub Actions 会冻结 Python sidecar、执行其自检，再把它作为 Electron Resource 打进应用。普通 `desktop.yml` 覆盖 macOS arm64、macOS x64 和 Windows x64 的未签名安装验证；手动 `desktop-signed.yml` 使用受保护的 release environment 生成并验证签名产物。证书配置与发布门禁见 [releasing-desktop.md](releasing-desktop.md)。
-
-旧 Qt 客户端的回归和打包命令统一使用 `desktop-legacy-*` 前缀，详见项目主 [README](../README.md#旧-qt-客户端)。
 
 对应字段、行为和打包流程由自动化测试与桌面 smoke 覆盖；公开仓库不包含内部迭代过程记录。
 

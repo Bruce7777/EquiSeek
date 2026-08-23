@@ -29,7 +29,7 @@ The desktop investment page adds a business-scoped long-running harness rather t
 
 SQLite/WAL is the supported single-user local-service default. It stores Run, Plan, Event, Lease, approval and Artifact metadata under `~/.equiseek/user-data/equiseek.sqlite3`, enables foreign keys and a bounded busy timeout, and stores LangGraph state separately in `~/.equiseek/user-data/equiseek-checkpoints.sqlite3`. Both stores are verified across cold Coordinator/database restart and use private file permissions. Local mode intentionally uses one Worker; it does not claim PostgreSQL-style competing-worker row locks.
 
-PostgreSQL is an optional deployment extra for multi-user or multiple competing Worker processes that require `FOR UPDATE SKIP LOCKED`. That deployment may also select PostgreSQL-backed LangGraph checkpoints. It is not required by the investment desktop client or a user's local service. Install it with `equiseek[postgres]`; the base/local and desktop dependency sets do not load PostgreSQL driver or checkpoint code.
+PostgreSQL is an optional deployment extra for multi-user or multiple competing Worker processes that require `FOR UPDATE SKIP LOCKED`. That deployment may also select PostgreSQL-backed LangGraph checkpoints. It is not required by the investment desktop client or a user's local service. Install it with `equiseek[postgres]`; the base local runtime does not load PostgreSQL driver or checkpoint code.
 
 ## Harness session kernel
 

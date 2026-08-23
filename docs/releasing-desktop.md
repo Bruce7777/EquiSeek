@@ -9,7 +9,7 @@
 | macOS | arm64、x64 | 未签名 Alpha ZIP；未来签名版 PKG、ZIP | Alpha 明示未签名；签名版验证 Developer ID、公证票据与 Gatekeeper |
 | Windows | x64 | 未签名 Alpha Setup.exe；未来签名版 Setup.exe、nupkg、RELEASES | Alpha 明示未签名；签名版验证 Authenticode 与时间戳 |
 
-普通 `.github/workflows/desktop.yml` 只做未签名的三架构构建回归，保留 7 天，不作为用户下载入口。首发 tag `v0.2.0-alpha.1` 会触发 `.github/workflows/desktop-release-unsigned.yml`：三平台原生构建、确认没有发布者签名、统一生成带 `unsigned` 的文件名和 `SHA256SUMS`，最后创建 GitHub Pre-release。该流程不读取 secrets，只给最终 Release job 最小 `contents: write` 权限；后续 Alpha 必须连同版本和 Release notes 显式评审，避免旧说明被自动复用。
+普通 `.github/workflows/desktop.yml` 只做未签名的三架构构建回归，保留 7 天，不作为用户下载入口。首发公开候选 tag `v0.2.0-alpha.2` 会触发 `.github/workflows/desktop-release-unsigned.yml`：三平台原生构建、确认没有发布者签名、统一生成带 `unsigned` 的文件名和 `SHA256SUMS`，最后创建 GitHub Pre-release。Alpha.1 在验收前撤销，没有作为公开基线。该流程不读取 secrets，只给最终 Release job 最小 `contents: write` 权限；后续 Alpha 必须连同版本和 Release notes 显式评审，避免旧说明被自动复用。
 
 `.github/workflows/desktop-signed.yml` 继续保留为未来手动签名流程，使用受保护的 `desktop-release` environment，生成签名产物并保留 14 天；它不会创建 GitHub Release 或推送任何远端。
 

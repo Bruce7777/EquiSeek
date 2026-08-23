@@ -14,7 +14,7 @@ analysis = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["PySide6", "aegisrun.desktop"],
+    excludes=[],
     noarchive=False,
     optimize=0,
 )

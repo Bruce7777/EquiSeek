@@ -41,7 +41,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - run: uv python install 3.12
-      - run: uv sync --frozen --extra desktop --extra desktop-build --extra dev
+      - run: uv sync --frozen --extra desktop-build --extra dev
       - run: npm ci --prefix apps/desktop
       - run: uv run pytest -q tests/unit/test_sidecar_protocol.py tests/unit/test_sidecar_local_state.py tests/unit/test_sidecar_runs.py tests/unit/test_skill_workspace.py
       - run: npm --prefix apps/desktop run lint
