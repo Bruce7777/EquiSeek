@@ -1,5 +1,5 @@
 # EquiSeek bilingual README consistency record. Both languages carry equal authority.
 # After updating both files, refresh this record with:
 #   python scripts/verify_readme_pair.py --write
-README.md: cfbe8067fc93cd8ec17a0b2418292253d925d586
-README.zh-CN.md: 5d6cd8073181af9561631ca5b8a0a325b5899381
+README.md: ba925c5dea9ef7301a98a7dc2ed14ff53da8657a
+README.zh-CN.md: 7f63ab43ec64b28a4756310db96105be31d88d26

@@ -2,6 +2,8 @@
 
 [English](README.md) | 简体中文
 
+[项目官网](https://bruce7777.github.io/EquiSeek/) · [下载当前 Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [未签名安装指南](docs/installing-unsigned-desktop.md)
+
 > 求真知，衡风险，成策略。
 
 求衡（EquiSeek）是一款面向个人投资者的本地优先、开源智能投研平台。它把投研助手、个股与宏观研究、持仓与自选管理、可复用 Skill、可恢复的 Goal 与 Plan、工作区工具和可审计运行轨迹集中在一个桌面应用中。

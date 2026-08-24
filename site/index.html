@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>求衡 EquiSeek｜本地优先、开源、可审计的 AI 投研桌面应用</title>
+    <meta
+      name="description"
+      content="求衡 EquiSeek 是面向个人投资者的本地优先开源 AI 投研桌面应用，提供个股研究、决策账本、持仓与自选、可复用 Skills 和可审计运行轨迹。支持 Windows 与 macOS 免费下载。"
+    />
+    <meta
+      name="keywords"
+      content="求衡,EquiSeek,AI投研,股票分析,A股,DeepSeek,开源软件,投资研究,决策账本,Electron"
+    />
+    <meta name="author" content="EquiSeek contributors" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#143f35" />
+    <link rel="canonical" href="https://bruce7777.github.io/EquiSeek/" />
+    <link rel="icon" href="assets/icon.png" />
+    <link rel="apple-touch-icon" href="assets/icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="求衡 EquiSeek" />
+    <meta property="og:title" content="求衡 EquiSeek｜让每个投资判断都有证据、有边界、有复盘" />
+    <meta
+      property="og:description"
+      content="本地优先、完全开源、可审计的 AI 投研桌面应用。免费下载 Windows 与 macOS Alpha。"
+    />
+    <meta property="og:url" content="https://bruce7777.github.io/EquiSeek/" />
+    <meta
+      property="og:image"
+      content="https://bruce7777.github.io/EquiSeek/assets/research-assistant.png"
+    />
+    <meta property="og:image:width" content="1440" />
+    <meta property="og:image:height" content="900" />
+    <meta property="og:image:alt" content="求衡 EquiSeek 投研助手界面" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="求衡 EquiSeek｜开源 AI 投研桌面应用" />
+    <meta
+      name="twitter:description"
+      content="本地优先、可审计，支持 Windows 与 macOS 免费下载。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://bruce7777.github.io/EquiSeek/assets/research-assistant.png"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+    <noscript><style>.reveal { opacity: 1; transform: none; }</style></noscript>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "求衡 EquiSeek",
+        "alternateName": "EquiSeek",
+        "description": "本地优先、开源、可审计的 AI 投资研究桌面应用。",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Windows 10, Windows 11, macOS",
+        "softwareVersion": "0.2.0-alpha.5",
+        "isAccessibleForFree": true,
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "downloadUrl": "https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5",
+        "codeRepository": "https://github.com/Bruce7777/EquiSeek",
+        "image": "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
+        "url": "https://bruce7777.github.io/EquiSeek/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到正文</a>
+    <header class="site-header" id="top">
+      <a class="brand" href="#top" aria-label="求衡 EquiSeek 首页">
+        <img src="assets/icon.png" alt="" width="44" height="44" />
+        <span>
+          <strong>EquiSeek 求衡</strong>
+          <small>智能投研平台</small>
+        </span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span></span><span></span><span></span>
+        <span class="sr-only">展开导航</span>
+      </button>
+      <nav id="site-nav" aria-label="主导航">
+        <a href="#capabilities">能力</a>
+        <a href="#interface">界面</a>
+        <a href="#download">下载</a>
+        <a href="#boundaries">边界</a>
+        <a class="nav-github" href="https://github.com/Bruce7777/EquiSeek">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span></span> OPEN SOURCE · LOCAL FIRST · AUDITABLE</p>
+          <h1>让每个投资判断，<br /><em>都有证据。</em></h1>
+          <p class="hero-lead">
+            求衡把 AI 投研助手、个股研究、决策账本与运行轨迹装进你的电脑。
+            数据、规则、结论与失效条件同链呈现，不替你下单，也不承诺收益。
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#download">
+              <span>免费下载 Alpha</span><b aria-hidden="true">↓</b>
+            </a>
+            <a class="button button-ghost" href="https://github.com/Bruce7777/EquiSeek">
+              查看源代码 <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+          <ul class="trust-list" aria-label="产品边界">
+            <li>无需注册</li>
+            <li>本地保存</li>
+            <li>自带 API Key</li>
+            <li>Apache-2.0</li>
+          </ul>
+        </div>
+
+        <div class="hero-stage reveal" aria-label="求衡产品界面预览">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="brand-seal" aria-hidden="true">
+            <img src="assets/icon.png" alt="" width="92" height="92" />
+          </div>
+          <figure class="product-frame">
+            <div class="window-bar">
+              <span></span><span></span><span></span>
+              <small>EquiSeek Research Assistant</small>
+            </div>
+            <img
+              src="assets/research-assistant.png"
+              alt="求衡投研助手：左侧功能导航、中间研究对话和右侧可审计运行过程"
+              width="1440"
+              height="900"
+              fetchpriority="high"
+            />
+          </figure>
+          <div class="evidence-note note-one"><b>01</b><span>证据有出处</span></div>
+          <div class="evidence-note note-two"><b>02</b><span>结论有边界</span></div>
+          <div class="evidence-note note-three"><b>03</b><span>判断可复盘</span></div>
+        </div>
+      </section>
+
+      <section class="principles" aria-label="产品原则">
+        <article><b>LOCAL</b><span>个人数据默认留在本机</span></article>
+        <article><b>OPEN</b><span>代码与研究规则完全公开</span></article>
+        <article><b>TRACE</b><span>工具、证据与执行过程可查</span></article>
+        <article><b>BOUND</b><span>明确触发条件与失效条件</span></article>
+      </section>
+
+      <section class="section capabilities" id="capabilities">
+        <div class="section-heading reveal">
+          <p class="kicker">WHAT EQUiSEEK DOES</p>
+          <h2>不是给答案，<br />是建立一条可信的研究链。</h2>
+          <p>把数据、计算、分析、决策和复盘放在同一个工作台中，每一步都保留可检查的上下文。</p>
+        </div>
+        <div class="capability-grid">
+          <article class="capability-card feature-card reveal">
+            <span class="card-index">01</span>
+            <div class="card-icon" aria-hidden="true">⌁</div>
+            <h3>投研助手</h3>
+            <p>用自然语言发起研究，组合 Skills、工作区工具与模型能力；没有模型 Key 时明确运行固定规则，不冒充大模型。</p>
+            <ul><li>持久会话与成果文件</li><li>Goal、Plan 与运行 Trace</li></ul>
+          </article>
+          <article class="capability-card reveal">
+            <span class="card-index">02</span>
+            <div class="card-icon" aria-hidden="true">⌗</div>
+            <h3>个股研究</h3>
+            <p>本地计算 MA、MACD、KDJ、RSI、ATR、BOLL 与 WR，通过多周期规则给出触发、失效与风险条件。</p>
+            <ul><li>A 股与境内部分指数、基金</li><li>BaoStock / 可选 Tushare</li></ul>
+          </article>
+          <article class="capability-card reveal">
+            <span class="card-index">03</span>
+            <div class="card-icon" aria-hidden="true">◎</div>
+            <h3>决策账本</h3>
+            <p>把研究结论保存在本机，按同源收盘价跟踪后续变化。结果明确标注为假设复盘，不包装成真实交易业绩。</p>
+            <ul><li>研究结论随时回看</li><li>价格变化同源追踪</li></ul>
+          </article>
+          <article class="capability-card reveal">
+            <span class="card-index">04</span>
+            <div class="card-icon" aria-hidden="true">◇</div>
+            <h3>持仓、自选与 Skills</h3>
+            <p>维护本地持仓、自选和候选标的；查看、启停或扩展研究 Skill，让工作流可以复用，也保持权限边界。</p>
+            <ul><li>数据默认本地存储</li><li>规则与权限可检查</li></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section interface" id="interface">
+        <div class="interface-copy reveal">
+          <p class="kicker">DECISION JOURNAL</p>
+          <h2>结论不是终点，<br />复盘才是。</h2>
+          <p>
+            求衡将当时的数据截止时间、规则结论、风险分数和逻辑失效条件保存在同一条证据链上。
+            日后看到的不只是涨跌，而是当初的判断是否成立。
+          </p>
+          <div class="interface-points">
+            <div><b>同源</b><span>研究与后续跟踪尽量使用同一行情来源</span></div>
+            <div><b>透明</b><span>显示计算依据、时间范围和数据时效</span></div>
+            <div><b>克制</b><span>等待也是结论，不把风险包装成确定性</span></div>
+          </div>
+        </div>
+        <figure class="journal-frame reveal">
+          <img
+            src="assets/decision-journal.png"
+              alt="求衡个股研究页面，展示本地决策账本、研究结论和右侧运行检查器"
+              width="1440"
+              height="900"
+            />
+          <figcaption>个股研究与本地决策账本 · 实际界面</figcaption>
+        </figure>
+      </section>
+
+      <section class="section download" id="download">
+        <div class="download-heading reveal">
+          <p class="kicker">ALPHA RELEASE · v0.2.0-alpha.5</p>
+          <h2>从 GitHub 直接下载，<br />不需要自己编译。</h2>
+          <p>当前安装包尚未签名或公证，系统可能提示“未知发布者”。请只从官方仓库下载，并核对 SHA-256。</p>
+        </div>
+        <div class="download-grid">
+          <a
+            class="download-card reveal"
+            href="https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-Windows-x64-0.2.0-alpha.5-unsigned-Setup.exe"
+          >
+            <span class="platform-mark">▦</span>
+            <span><small>WINDOWS 10 / 11</small><strong>x64 安装程序</strong><em>Setup.exe · 未签名</em></span>
+            <b aria-hidden="true">↓</b>
+          </a>
+          <a
+            class="download-card reveal"
+            href="https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-arm64-0.2.0-alpha.5-unsigned.zip"
+          >
+            <span class="platform-mark">●</span>
+            <span><small>MAC · APPLE SILICON</small><strong>arm64 应用</strong><em>M 系列芯片 · 未签名</em></span>
+            <b aria-hidden="true">↓</b>
+          </a>
+          <a
+            class="download-card reveal"
+            href="https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-x64-0.2.0-alpha.5-unsigned.zip"
+          >
+            <span class="platform-mark">●</span>
+            <span><small>MAC · INTEL</small><strong>x64 应用</strong><em>Intel 芯片 · 未签名</em></span>
+            <b aria-hidden="true">↓</b>
+          </a>
+        </div>
+        <div class="download-links reveal">
+          <a href="https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5">查看完整 Release ↗</a>
+          <a href="https://github.com/Bruce7777/EquiSeek/blob/main/docs/installing-unsigned-desktop.md">阅读未签名安装指南 ↗</a>
+          <a href="https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/SHA256SUMS">下载 SHA256SUMS ↓</a>
+        </div>
+      </section>
+
+      <section class="section boundaries" id="boundaries">
+        <div class="boundaries-title reveal">
+          <p class="kicker">KNOW THE BOUNDARIES</p>
+          <h2>研究工具应当说明<br />它不能做什么。</h2>
+        </div>
+        <div class="boundary-list reveal">
+          <article><span>01</span><div><h3>不是券商，也不自动交易</h3><p>不连接券商、不接受交易委托、不代替用户执行买卖。</p></div></article>
+          <article><span>02</span><div><h3>不是收益承诺</h3><p>规则结论和模型内容仅作研究参考，可能错误、过时或不适合你的风险承受能力。</p></div></article>
+          <article><span>03</span><div><h3>API Key 由用户自己配置</h3><p>安装包不内置维护者密钥。未配置 DeepSeek Key 时，仅运行并明确标注本地固定规则模式。</p></div></article>
+          <article><span>04</span><div><h3>当前市场范围有限</h3><p>目前以 A 股和部分境内指数、基金为主；美股、港股及其他全球资产尚未接入。</p></div></article>
+        </div>
+      </section>
+
+      <section class="open-source reveal">
+        <div>
+          <p class="kicker">BUILT IN THE OPEN</p>
+          <h2>代码公开，判断可查。</h2>
+          <p>Apache-2.0 开源。欢迎阅读源码、报告问题，或把自己的研究方法做成 Skill。</p>
+        </div>
+        <div class="open-actions">
+          <a class="button button-light" href="https://github.com/Bruce7777/EquiSeek">在 GitHub 查看项目 ↗</a>
+          <a class="text-link" href="https://github.com/Bruce7777/EquiSeek/issues">提交问题或建议 →</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-brand">
+        <img src="assets/icon.png" alt="" width="48" height="48" />
+        <div><strong>EquiSeek 求衡</strong><span>Seek Evidence. Balance Risk. Shape Decisions.</span></div>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/Bruce7777/EquiSeek">源代码</a>
+        <a href="https://github.com/Bruce7777/EquiSeek/releases">Releases</a>
+        <a href="https://github.com/Bruce7777/EquiSeek/blob/main/SECURITY.md">安全</a>
+        <a href="https://github.com/Bruce7777/EquiSeek/blob/main/LICENSE">许可证</a>
+      </div>
+      <p class="footer-note">仅供投资研究参考，不构成投资建议。市场有风险，决策需独立。</p>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>

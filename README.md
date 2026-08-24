@@ -2,6 +2,8 @@
 
 English | [简体中文](README.zh-CN.md)
 
+[Project website](https://bruce7777.github.io/EquiSeek/) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
+
 > Seek Evidence. Balance Risk. Shape Decisions.
 
 EquiSeek is a local-first, open-source AI investment research platform for individual investors. It brings the research assistant, stock and macro research, portfolio and watchlist management, reusable Skills, recoverable Goals and Plans, workspace tools, and auditable run traces into one desktop application.
