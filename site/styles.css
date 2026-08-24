@@ -97,6 +97,12 @@ img {
   border-bottom: 1px solid rgba(21, 34, 30, 0.14);
 }
 
+.header-tools {
+  display: flex;
+  gap: clamp(0.9rem, 1.7vw, 1.6rem);
+  align-items: center;
+}
+
 .brand {
   display: inline-flex;
   gap: 0.8rem;
@@ -167,6 +173,50 @@ nav a:hover::after {
   border-radius: 999px;
 }
 
+.language-switch {
+  display: inline-grid;
+  min-width: 74px;
+  padding: 3px;
+  color: #53605a;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  font-weight: 700;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.language-switch a,
+.language-switch span {
+  display: grid;
+  min-width: 31px;
+  min-height: 28px;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.language-switch span[aria-current="true"] {
+  color: white;
+  background: var(--green-900);
+}
+
+.language-switch a {
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.language-switch a:hover {
+  color: var(--green-900);
+  background: var(--mint);
+}
+
+.language-switch a:focus-visible,
+.nav-toggle:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 .nav-toggle {
   display: none;
 }
@@ -222,6 +272,15 @@ h2 {
 h1 {
   font-size: clamp(3.4rem, 5.2vw, 5.5rem);
   line-height: 0.98;
+}
+
+body[data-locale="en"] h1 {
+  font-size: clamp(3.25rem, 4.7vw, 5rem);
+  line-height: 0.97;
+}
+
+body[data-locale="en"] h2 {
+  letter-spacing: -0.035em;
 }
 
 h1 em {
@@ -1065,6 +1124,10 @@ footer {
     border-radius: 50%;
   }
 
+  .header-tools {
+    gap: 0.55rem;
+  }
+
   .nav-toggle > span:not(.sr-only) {
     display: block;
     width: 17px;
@@ -1102,6 +1165,10 @@ footer {
 
   h1 {
     font-size: clamp(3rem, 14vw, 4.8rem);
+  }
+
+  body[data-locale="en"] h1 {
+    font-size: clamp(2.85rem, 12vw, 4.3rem);
   }
 
   .hero-stage {
@@ -1237,6 +1304,10 @@ footer {
 @media (max-width: 420px) {
   .brand small {
     display: none;
+  }
+
+  .language-switch {
+    min-width: 68px;
   }
 
   .hero-actions .button {

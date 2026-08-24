@@ -20,11 +20,36 @@
     />
     <meta name="theme-color" content="#143f35" />
     <link rel="canonical" href="https://bruce7777.github.io/EquiSeek/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://bruce7777.github.io/EquiSeek/" />
+    <link rel="alternate" hreflang="en" href="https://bruce7777.github.io/EquiSeek/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://bruce7777.github.io/EquiSeek/" />
     <link rel="icon" href="assets/icon.png" />
     <link rel="apple-touch-icon" href="assets/icon.png" />
+    <script>
+      (() => {
+        let preference = null;
+        try {
+          preference = window.localStorage.getItem('equiseek-language');
+        } catch {
+          // Fall back to the browser language when storage is unavailable.
+        }
+
+        const browserLanguage = navigator.languages?.[0] || navigator.language || 'zh';
+        const shouldUseEnglish =
+          preference === 'en' ||
+          (preference !== 'zh' && !browserLanguage.toLowerCase().startsWith('zh'));
+
+        if (shouldUseEnglish) {
+          const englishUrl = new URL('en/', window.location.href);
+          englishUrl.hash = window.location.hash;
+          window.location.replace(englishUrl);
+        }
+      })();
+    </script>
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:site_name" content="求衡 EquiSeek" />
     <meta property="og:title" content="求衡 EquiSeek｜人人都能拥有的专业投研 AI 助手" />
     <meta
@@ -59,6 +84,7 @@
         "name": "求衡 EquiSeek",
         "alternateName": "EquiSeek",
         "description": "免费开源、面向个人投资者的专业智能投研平台。以 AI 助手为核心，支持自然语言交互、工具调用、任务规划与持续执行，专注选股、研究、观察与复盘。",
+        "inLanguage": "zh-CN",
         "applicationCategory": "FinanceApplication",
         "operatingSystem": "Windows 10, Windows 11, macOS",
         "softwareVersion": "0.2.0-alpha.5",
@@ -76,7 +102,7 @@
       }
     </script>
   </head>
-  <body>
+  <body data-locale="zh">
     <a class="skip-link" href="#main">跳到正文</a>
     <header class="site-header" id="top">
       <a class="brand" href="#top" aria-label="求衡 EquiSeek 首页">
@@ -86,17 +112,23 @@
           <small>免费开源 · 专业投研 AI 助手</small>
         </span>
       </a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
-        <span></span><span></span><span></span>
-        <span class="sr-only">展开导航</span>
-      </button>
-      <nav id="site-nav" aria-label="主导航">
-        <a href="#capabilities">能力</a>
-        <a href="#interface">界面</a>
-        <a href="#download">下载</a>
-        <a href="#boundaries">边界</a>
-        <a class="nav-github" href="https://github.com/Bruce7777/EquiSeek">GitHub ↗</a>
-      </nav>
+      <div class="header-tools">
+        <nav id="site-nav" aria-label="主导航">
+          <a href="#capabilities">能力</a>
+          <a href="#interface">界面</a>
+          <a href="#download">下载</a>
+          <a href="#boundaries">边界</a>
+          <a class="nav-github" href="https://github.com/Bruce7777/EquiSeek">GitHub ↗</a>
+        </nav>
+        <div class="language-switch" aria-label="语言选择">
+          <span aria-current="true">中</span>
+          <a href="en/" hreflang="en" lang="en" data-language="en" aria-label="Switch to English">EN</a>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+          <span></span><span></span><span></span>
+          <span class="sr-only">展开导航</span>
+        </button>
+      </div>
     </header>
 
     <main id="main">

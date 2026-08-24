@@ -1,5 +1,21 @@
 const menuButton = document.querySelector('.nav-toggle');
 const navigation = document.querySelector('#site-nav');
+const languageLinks = document.querySelectorAll('[data-language]');
+const languageStorageKey = 'equiseek-language';
+
+const saveLanguagePreference = (language) => {
+  try {
+    window.localStorage.setItem(languageStorageKey, language);
+  } catch {
+    // Language switching still works through ordinary links when storage is unavailable.
+  }
+};
+
+languageLinks.forEach((link) => {
+  link.addEventListener('click', () => {
+    saveLanguagePreference(link.dataset.language);
+  });
+});
 
 menuButton?.addEventListener('click', () => {
   const isOpen = menuButton.getAttribute('aria-expanded') === 'true';

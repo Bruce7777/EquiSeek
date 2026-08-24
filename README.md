@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-[Project website](https://bruce7777.github.io/EquiSeek/) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
+[Project website](https://bruce7777.github.io/EquiSeek/en/) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
 
 > Technology for everyone: professional investment-research tools should not be limited to institutions.
 
