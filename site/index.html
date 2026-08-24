@@ -3,16 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>求衡 EquiSeek｜免费开源的专业投研 AI 助手与智能投研平台</title>
+    <title>求衡 EquiSeek｜免费开源的专业 AI 投研助手与智能投研平台</title>
     <meta
       name="description"
-      content="求衡 EquiSeek 是免费开源、面向个人投资者的专业智能投研平台。它以 AI 助手为核心，支持自然语言交互、工具调用、任务规划与持续执行，专注选股、研究、观察与复盘。"
+      content="求衡 EquiSeek 是面向个人投资者的免费开源专业 AI 投研助手与智能投研平台，支持自然语言交互、工具调用、任务规划、选股研究、观察与复盘。"
     />
     <meta
       name="keywords"
       content="求衡,EquiSeek,免费开源,投研AI助手,专业智能投研平台,AI投研,股票分析,A股,DeepSeek,科技平权,选股,决策账本,Electron"
     />
     <meta name="author" content="EquiSeek contributors" />
+    <meta name="application-name" content="求衡 EquiSeek" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta
       name="google-site-verification"
@@ -35,11 +36,12 @@
         }
 
         const browserLanguage = navigator.languages?.[0] || navigator.language || 'zh';
+        const isCrawler = /bot|crawler|spider|crawling|inspectiontool|lighthouse/i.test(navigator.userAgent);
         const shouldUseEnglish =
           preference === 'en' ||
           (preference !== 'zh' && !browserLanguage.toLowerCase().startsWith('zh'));
 
-        if (shouldUseEnglish) {
+        if (shouldUseEnglish && !isCrawler) {
           const englishUrl = new URL('en/', window.location.href);
           englishUrl.hash = window.location.hash;
           window.location.replace(englishUrl);
@@ -80,25 +82,70 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "求衡 EquiSeek",
-        "alternateName": "EquiSeek",
-        "description": "免费开源、面向个人投资者的专业智能投研平台。以 AI 助手为核心，支持自然语言交互、工具调用、任务规划与持续执行，专注选股、研究、观察与复盘。",
-        "inLanguage": "zh-CN",
-        "applicationCategory": "FinanceApplication",
-        "operatingSystem": "Windows 10, Windows 11, macOS",
-        "softwareVersion": "0.2.0-alpha.5",
-        "isAccessibleForFree": true,
-        "license": "https://www.apache.org/licenses/LICENSE-2.0",
-        "downloadUrl": "https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5",
-        "codeRepository": "https://github.com/Bruce7777/EquiSeek",
-        "image": "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
-        "url": "https://bruce7777.github.io/EquiSeek/",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "CNY"
-        }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://bruce7777.github.io/EquiSeek/#website",
+            "url": "https://bruce7777.github.io/EquiSeek/",
+            "name": "求衡 EquiSeek",
+            "alternateName": ["EquiSeek", "求衡", "EquiSeek AI Investment Research"],
+            "description": "免费开源的专业 AI 投研助手与智能投研平台。",
+            "inLanguage": ["zh-CN", "en"]
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://bruce7777.github.io/EquiSeek/#webpage",
+            "url": "https://bruce7777.github.io/EquiSeek/",
+            "name": "求衡 EquiSeek｜免费开源的专业 AI 投研助手与智能投研平台",
+            "isPartOf": { "@id": "https://bruce7777.github.io/EquiSeek/#website" },
+            "about": { "@id": "https://bruce7777.github.io/EquiSeek/#software" },
+            "inLanguage": "zh-CN"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://bruce7777.github.io/EquiSeek/#software",
+            "name": "求衡 EquiSeek",
+            "alternateName": "EquiSeek",
+            "description": "面向个人投资者的免费开源专业 AI 投研助手与智能投研平台，支持对话、工具调用、任务规划、选股研究、观察与复盘。",
+            "applicationCategory": "FinanceApplication",
+            "applicationSubCategory": "Investment Research",
+            "operatingSystem": "Windows 10, Windows 11, macOS",
+            "softwareVersion": "0.2.0-alpha.5",
+            "isAccessibleForFree": true,
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "downloadUrl": "https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5",
+            "codeRepository": "https://github.com/Bruce7777/EquiSeek",
+            "sameAs": ["https://github.com/Bruce7777/EquiSeek"],
+            "image": "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
+            "screenshot": [
+              "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
+              "https://bruce7777.github.io/EquiSeek/assets/decision-journal.png"
+            ],
+            "featureList": [
+              "专业投研 AI 助手",
+              "自然语言交互与工具调用",
+              "个股与宏观研究",
+              "持仓、自选与候选标的",
+              "决策账本与可审计运行轨迹"
+            ],
+            "url": "https://bruce7777.github.io/EquiSeek/",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "CNY"
+            }
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "@id": "https://bruce7777.github.io/EquiSeek/#source",
+            "name": "EquiSeek",
+            "description": "Apache-2.0 licensed source code for the EquiSeek AI investment research desktop application.",
+            "codeRepository": "https://github.com/Bruce7777/EquiSeek",
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "programmingLanguage": ["Python", "TypeScript", "JavaScript", "HTML", "CSS"],
+            "targetProduct": { "@id": "https://bruce7777.github.io/EquiSeek/#software" }
+          }
+        ]
       }
     </script>
   </head>
@@ -134,10 +181,10 @@
     <main id="main">
       <section class="hero">
         <div class="hero-copy reveal">
-          <p class="eyebrow"><span></span> FREE &amp; OPEN SOURCE · TECHNOLOGY FOR EVERYONE</p>
+          <p class="eyebrow"><span></span> EQUISEEK 求衡 · FREE &amp; OPEN SOURCE</p>
           <h1>专业投研<br />AI 助手，<br /><em>人人可拥有。</em></h1>
           <p class="hero-lead">
-            求衡是一款免费开源、面向个人投资者的专业智能投研平台。它以 AI 助手为核心，支持自然语言交互、工具调用、任务规划与持续执行，专注于选股、研究、观察和复盘，让专业投研能力以更低门槛服务每一位投资者。
+            求衡（EquiSeek）是一款免费开源、面向个人投资者的专业智能投研平台。它以 AI 助手为核心，支持自然语言交互、工具调用、任务规划与持续执行，专注于选股、研究、观察和复盘，让专业投研能力以更低门槛服务每一位投资者。
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="#download">

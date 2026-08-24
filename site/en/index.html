@@ -3,16 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EquiSeek | Free, Open-Source AI Investment Research Assistant</title>
+    <title>EquiSeek | Free Open-Source AI Investment Research Platform &amp; Assistant</title>
     <meta
       name="description"
-      content="EquiSeek is a free, open-source professional AI investment research platform for individual investors, with natural-language interaction, tools, planning, and sustained execution."
+      content="EquiSeek is a free, open-source professional AI investment research platform and assistant for individual investors, with natural-language interaction, tools, planning, screening, and review."
     />
     <meta
       name="keywords"
       content="EquiSeek,open source,investment research AI assistant,AI investment research,stock analysis,A-shares,DeepSeek,stock screening,decision journal,Electron"
     />
     <meta name="author" content="EquiSeek contributors" />
+    <meta name="application-name" content="EquiSeek" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="theme-color" content="#143f35" />
     <link rel="canonical" href="https://bruce7777.github.io/EquiSeek/en/" />
@@ -55,25 +56,70 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "EquiSeek 求衡",
-        "alternateName": "EquiSeek",
-        "description": "A free and open-source professional AI investment research platform built around an AI assistant for individual investors.",
-        "inLanguage": "en",
-        "applicationCategory": "FinanceApplication",
-        "operatingSystem": "Windows 10, Windows 11, macOS",
-        "softwareVersion": "0.2.0-alpha.5",
-        "isAccessibleForFree": true,
-        "license": "https://www.apache.org/licenses/LICENSE-2.0",
-        "downloadUrl": "https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5",
-        "codeRepository": "https://github.com/Bruce7777/EquiSeek",
-        "image": "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
-        "url": "https://bruce7777.github.io/EquiSeek/en/",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://bruce7777.github.io/EquiSeek/#website",
+            "url": "https://bruce7777.github.io/EquiSeek/",
+            "name": "EquiSeek 求衡",
+            "alternateName": ["EquiSeek", "求衡", "EquiSeek AI Investment Research"],
+            "description": "A free and open-source professional AI investment research platform and assistant.",
+            "inLanguage": ["zh-CN", "en"]
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://bruce7777.github.io/EquiSeek/en/#webpage",
+            "url": "https://bruce7777.github.io/EquiSeek/en/",
+            "name": "EquiSeek | Free Open-Source AI Investment Research Platform & Assistant",
+            "isPartOf": { "@id": "https://bruce7777.github.io/EquiSeek/#website" },
+            "about": { "@id": "https://bruce7777.github.io/EquiSeek/#software" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://bruce7777.github.io/EquiSeek/#software",
+            "name": "EquiSeek 求衡",
+            "alternateName": "EquiSeek",
+            "description": "A free and open-source professional AI investment research platform and assistant for individual investors, supporting conversation, tools, task planning, screening, observation, and review.",
+            "applicationCategory": "FinanceApplication",
+            "applicationSubCategory": "Investment Research",
+            "operatingSystem": "Windows 10, Windows 11, macOS",
+            "softwareVersion": "0.2.0-alpha.5",
+            "isAccessibleForFree": true,
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "downloadUrl": "https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5",
+            "codeRepository": "https://github.com/Bruce7777/EquiSeek",
+            "sameAs": ["https://github.com/Bruce7777/EquiSeek"],
+            "image": "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
+            "screenshot": [
+              "https://bruce7777.github.io/EquiSeek/assets/research-assistant.png",
+              "https://bruce7777.github.io/EquiSeek/assets/decision-journal.png"
+            ],
+            "featureList": [
+              "Professional investment research AI assistant",
+              "Natural-language interaction and tool use",
+              "Stock and macro research",
+              "Portfolio, watchlists, and candidates",
+              "Decision journal and auditable run traces"
+            ],
+            "url": "https://bruce7777.github.io/EquiSeek/",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "@id": "https://bruce7777.github.io/EquiSeek/#source",
+            "name": "EquiSeek",
+            "description": "Apache-2.0 licensed source code for the EquiSeek AI investment research desktop application.",
+            "codeRepository": "https://github.com/Bruce7777/EquiSeek",
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "programmingLanguage": ["Python", "TypeScript", "JavaScript", "HTML", "CSS"],
+            "targetProduct": { "@id": "https://bruce7777.github.io/EquiSeek/#software" }
+          }
+        ]
       }
     </script>
   </head>
@@ -109,7 +155,7 @@
     <main id="main">
       <section class="hero">
         <div class="hero-copy reveal">
-          <p class="eyebrow"><span></span> FREE &amp; OPEN SOURCE · TECHNOLOGY FOR EVERYONE</p>
+          <p class="eyebrow"><span></span> EQUISEEK · FREE &amp; OPEN SOURCE</p>
           <h1>Professional research.<br />Your AI assistant.<br /><em>Open to everyone.</em></h1>
           <p class="hero-lead">
             EquiSeek is a free and open-source professional AI investment research platform for individual investors. Built around an AI assistant, it supports natural-language interaction, tool use, task planning, and sustained execution across screening, research, observation, and review—making professional research capabilities more accessible to everyone.
