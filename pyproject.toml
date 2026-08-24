@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "equiseek"
 version = "0.2.0"
-description = "EquiSeek: a local-first AI investment research platform with a recoverable agent harness."
+description = "EquiSeek: a free and open-source professional investment research AI assistant and platform."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"

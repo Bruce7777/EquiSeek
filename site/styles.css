@@ -220,7 +220,7 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(3.4rem, 6.4vw, 6.9rem);
+  font-size: clamp(3.4rem, 5.2vw, 5.5rem);
   line-height: 0.98;
 }
 
@@ -728,6 +728,52 @@ h2 {
   gap: 0.8rem;
 }
 
+.quick-steps {
+  display: grid;
+  padding: 0;
+  margin: 0 0 2rem;
+  background: var(--green-950);
+  color: #edf4f1;
+  list-style: none;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.quick-steps li {
+  display: grid;
+  min-height: 118px;
+  padding: 1.35rem;
+  gap: 1rem;
+  align-items: start;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  grid-template-columns: 2rem 1fr;
+}
+
+.quick-steps li:last-child {
+  border-right: 0;
+}
+
+.quick-steps b {
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 0.67rem;
+}
+
+.quick-steps span {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.quick-steps strong {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+}
+
+.quick-steps small {
+  color: #afc1ba;
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+
 .download-card {
   display: grid;
   min-height: 104px;
@@ -804,6 +850,13 @@ h2 {
 
 .download-links a:hover {
   border-color: var(--green-500);
+}
+
+.unsigned-note {
+  margin: 1.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.7;
 }
 
 .boundaries {
@@ -1143,6 +1196,20 @@ footer {
   .download-card {
     padding: 1.1rem;
     grid-template-columns: 50px 1fr auto;
+  }
+
+  .quick-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-steps li {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .quick-steps li:last-child {
+    border-bottom: 0;
   }
 
   .download-card > b {

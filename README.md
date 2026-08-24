@@ -4,23 +4,25 @@ English | [简体中文](README.zh-CN.md)
 
 [Project website](https://bruce7777.github.io/EquiSeek/) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
 
-> Seek Evidence. Balance Risk. Shape Decisions.
+> Technology for everyone: professional investment-research tools should not be limited to institutions.
 
-EquiSeek is a local-first, open-source AI investment research platform for individual investors. It brings the research assistant, stock and macro research, portfolio and watchlist management, reusable Skills, recoverable Goals and Plans, workspace tools, and auditable run traces into one desktop application.
+EquiSeek is a **free and open-source professional AI investment research platform** for individual investors. Built around a **professional investment research AI assistant**, it supports natural-language interaction, tool use, Skills, task planning, and sustained execution. It focuses on screening, stock and macro research, portfolios, watchlists, observation, and review—making structured, auditable research capabilities more accessible to individual investors.
 
-The current desktop product is the light-themed Electron application under `apps/desktop`. It does not require an account, connect to a brokerage, place orders, or promise returns.
+After downloading the prebuilt desktop app, the intelligent assistant only needs your own DeepSeek API key. Free BaoStock market data needs no token; Tushare and Tavily are optional enhancements. Screen candidates, add them to a watchlist, and judge the results over time with the decision journal. If it does not help, uninstall it—there is no EquiSeek account or software subscription to cancel.
+
+The current desktop product is the local-first, light-themed Electron application under `apps/desktop`. It does not require an account, connect to a brokerage, place orders, or promise returns.
 
 > **Desktop scope:** the public project contains one desktop client: the Electron application under `apps/desktop`. Python provides its sidecar and reusable research engine, not a second desktop UI.
 
 ## Highlights
 
-- Research assistant: persistent conversations, Markdown/HTML artifacts, attachments, Goals, Plans, sub-agents, and run traces.
+- Investment research AI assistant: persistent conversations, Markdown/HTML artifacts, attachments, Goals, Plans, sub-agents, and run traces.
 - Stock research: locally calculated MA, MACD, KDJ, RSI, ATR, BOLL, and WR indicators, with multi-timeframe rules, data freshness, triggers, invalidation conditions, and traceable reports.
 - Decision journal: successful stock-research conclusions remain local and replayable, with optional same-source closing-price follow-up clearly labeled as hypothetical rather than actual trading performance.
 - Macro research: discovery and verification of official releases, with freshness gates before capital-flow, cost-transfer, allocation, or sector conclusions are updated.
 - Portfolio and watchlist: query and maintain local positions and candidates through either the interface or the research assistant.
 - Workspaces and Skills: persistent shell and permission-controlled file tools inside an explicitly selected workspace; built-in Skills can be viewed, enabled, overridden, or extended.
-- Optional models: deterministic local research works without an API key; DeepSeek or an OpenAI-compatible provider can be configured when language reasoning is needed.
+- Simple assistant setup: bring your own DeepSeek API key to enable dynamic conversation; clearly labeled deterministic local research still works without a key, while compatible providers remain an optional advanced configuration.
 - Agent harness: recoverable runs, a persistent DAG, approvals, tool permissions, idempotent side effects, event replay, artifacts, isolated workspaces, and deterministic evaluations.
 
 ## Interface preview

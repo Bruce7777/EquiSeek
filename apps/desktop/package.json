@@ -2,9 +2,9 @@
   "name": "equiseek-desktop",
   "productName": "EquiSeek",
   "version": "0.2.0",
-  "description": "EquiSeek local-first open-source AI investment research platform",
+  "description": "EquiSeek free and open-source professional investment research AI assistant and platform",
   "author": "EquiSeek Contributors",
-  "homepage": "https://github.com/Bruce7777/EquiSeek#readme",
+  "homepage": "https://bruce7777.github.io/EquiSeek/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Bruce7777/EquiSeek.git"
