@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-[Project website](https://bruce7777.github.io/EquiSeek/en/) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
+[Project website](https://bruce7777.github.io/EquiSeek/en/) · [Gitee mirror](https://gitee.com/luoyc619/EquiSeek) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
 
 > Technology for everyone: professional investment-research tools should not be limited to institutions.
 
@@ -65,6 +65,12 @@ make desktop-install
 make desktop
 ```
 
+For source access from mainland China, you can also clone the Gitee mirror:
+
+```bash
+git clone https://gitee.com/luoyc619/EquiSeek.git
+```
+
 `make desktop-install` installs both the Python sidecar and Electron dependencies. Normal development runs only need `make desktop` afterward.
 
 On Windows PowerShell:
@@ -103,6 +109,8 @@ Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS a
 ## Download and install the unsigned Alpha
 
 Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
+
+> The Gitee mirror currently provides source access. All three installers exceed Gitee's 100 MB per-attachment limit for regular projects, so prebuilt Alpha packages remain on GitHub Releases.
 
 | Platform | Asset |
 | --- | --- |

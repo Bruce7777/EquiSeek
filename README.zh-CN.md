@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-[项目官网](https://bruce7777.github.io/EquiSeek/) · [下载当前 Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [未签名安装指南](docs/installing-unsigned-desktop.md)
+[项目官网](https://bruce7777.github.io/EquiSeek/) · [Gitee 国内镜像](https://gitee.com/luoyc619/EquiSeek) · [下载当前 Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [未签名安装指南](docs/installing-unsigned-desktop.md)
 
 > 科技平权：让专业投研工具不再只属于机构。
 
@@ -65,6 +65,12 @@ make desktop-install
 make desktop
 ```
 
+中国大陆网络也可以从 Gitee 源码镜像克隆：
+
+```bash
+git clone https://gitee.com/luoyc619/EquiSeek.git
+```
+
 `make desktop-install` 会同时安装 Python sidecar 和 Electron 依赖；之后日常开发只需执行 `make desktop`。
 
 Windows PowerShell：
@@ -103,6 +109,8 @@ make desktop-package
 ## 下载并安装未签名 Alpha
 
 不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
+
+> Gitee 国内镜像当前用于源码访问。三个安装包均超过 Gitee 普通项目 100MB 的单附件上限，因此编译好的 Alpha 仍由 GitHub Releases 分发。
 
 | 平台 | 文件名 |
 | --- | --- |
