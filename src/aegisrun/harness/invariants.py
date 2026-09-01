@@ -90,8 +90,49 @@ def lifecycle_invariant(events: Sequence[AgentEvent]) -> None:
     consumed_followups: set[str] = set()
     open_turns: dict[str, str] = {}
     closed_turns: set[str] = set()
+    open_agent_turns: set[str] = set()
+    closed_agent_turns: set[str] = set()
+    open_agent_steps: dict[str, str] = {}
+    closed_agent_steps: set[str] = set()
     for event in events:
-        if event.event_type == "request/header":
+        if event.event_type == "turn/started":
+            turn_id = _identity(event.payload, "turn_id", "turn")
+            if event.turn_id != turn_id:
+                raise InvariantError("turn", "event metadata does not match turn id")
+            if turn_id in open_agent_turns or turn_id in closed_agent_turns:
+                raise InvariantError("turn", "duplicate turn id")
+            open_agent_turns.add(turn_id)
+        elif event.event_type == "step/started":
+            step_id = _identity(event.payload, "step_id", "step")
+            if event.step_id != step_id:
+                raise InvariantError("step", "event metadata does not match step id")
+            if event.turn_id not in open_agent_turns:
+                raise InvariantError("step", "step is outside an open turn")
+            if step_id in open_agent_steps or step_id in closed_agent_steps:
+                raise InvariantError("step", "duplicate step id")
+            open_agent_steps[step_id] = event.turn_id
+        elif event.event_type == "step/ended":
+            step_id = _identity(event.payload, "step_id", "step")
+            if (
+                event.step_id != step_id
+                or event.turn_id is None
+                or open_agent_steps.get(step_id) != event.turn_id
+            ):
+                raise InvariantError("step", "orphan or mismatched step ending")
+            del open_agent_steps[step_id]
+            closed_agent_steps.add(step_id)
+        elif event.event_type == "turn/ended":
+            turn_id = _identity(event.payload, "turn_id", "turn")
+            if event.turn_id != turn_id or turn_id not in open_agent_turns:
+                raise InvariantError("turn", "orphan or mismatched turn ending")
+            if turn_id in open_agent_steps.values():
+                raise InvariantError("turn", "turn ended with an open step")
+            open_agent_turns.remove(turn_id)
+            closed_agent_turns.add(turn_id)
+        elif event.event_type == "session/ended":
+            if open_agent_turns or open_agent_steps or open_models or open_tools:
+                raise InvariantError("session", "session ended with open lifecycle work")
+        elif event.event_type == "request/header":
             request_id = _identity(event.payload, "request_id", "request")
             if request_id in request_headers:
                 raise InvariantError("request", "duplicate request header id")

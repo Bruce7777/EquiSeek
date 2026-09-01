@@ -15,6 +15,11 @@ from aegisrun.harness.events import (
     WorkspaceEventStore,
 )
 from aegisrun.harness.invariants import InvariantError, InvariantRegistry, default_invariants
+from aegisrun.harness.loop_control import (
+    AgentLoopHarness,
+    HarnessPlanItem,
+    ToolCallGuardDecision,
+)
 from aegisrun.harness.projections import HarnessProjection, project_events
 from aegisrun.harness.prompt import (
     PromptAssembly,
@@ -30,6 +35,7 @@ from aegisrun.harness.surface import RuntimeContextProjection, SurfaceMessage, d
 
 __all__ = [
     "AgentEvent",
+    "AgentLoopHarness",
     "CapabilityDescriptor",
     "CapabilityError",
     "CapabilityRegistry",
@@ -38,6 +44,7 @@ __all__ = [
     "EventSource",
     "EventStore",
     "HarnessProjection",
+    "HarnessPlanItem",
     "InvariantError",
     "InvariantRegistry",
     "ModelRequestEnvelope",
@@ -50,6 +57,7 @@ __all__ = [
     "RuntimeContextProjection",
     "SurfaceMessage",
     "ToolSchemaSnapshot",
+    "ToolCallGuardDecision",
     "TrustLevel",
     "WorkspaceEventStore",
     "default_invariants",

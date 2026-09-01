@@ -230,6 +230,17 @@ class DeepSeekClient:
             "response_format": {"type": "json_object"},
             "messages": messages,
         }
+        return await self._complete_json_request(request)
+
+    async def complete_json_prepared(
+        self,
+        envelope: ModelRequestEnvelope,
+    ) -> dict[str, Any]:
+        """Execute the exact credential-free request captured by the Harness."""
+
+        return await self._complete_json_request(envelope.request_body)
+
+    async def _complete_json_request(self, request: dict[str, Any]) -> dict[str, Any]:
         try:
             response = await self._client.post("chat/completions", json=request)
             response.raise_for_status()

@@ -654,6 +654,7 @@ class SidecarDispatcher:
             result = await execute_investment_agent(
                 InvestmentAgentTaskRequest(
                     run=InvestmentAgentRunRequest(
+                        run_id=external_run_id,
                         question=selection.prompt,
                         intent=routed.intent,
                         thread_id=thread_id,

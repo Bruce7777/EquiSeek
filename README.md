@@ -23,7 +23,7 @@ The current desktop product is the local-first, light-themed Electron applicatio
 - Portfolio and watchlist: query and maintain local positions and candidates through either the interface or the research assistant.
 - Workspaces and Skills: persistent shell and permission-controlled file tools inside an explicitly selected workspace; built-in Skills can be viewed, enabled, overridden, or extended.
 - Simple assistant setup: bring your own DeepSeek API key to enable dynamic conversation; clearly labeled deterministic local research still works without a key, while compatible providers remain an optional advanced configuration.
-- Agent harness: recoverable runs, a persistent DAG, approvals, tool permissions, idempotent side effects, event replay, artifacts, isolated workspaces, and deterministic evaluations.
+- Agent harness: recoverable runs, persistent plans, deferred tool discovery, catalog fingerprints, advisory repeat-call reminders, bounded tool output with verified paginated readback, event-referenced traces, approvals, isolated workspaces, and deterministic evaluations.
 
 ## Interface preview
 

@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from html import unescape
@@ -18,7 +18,12 @@ import httpx
 from aegisrun.agents.investment_conversation import InvestmentIntent, InvestmentMemory
 from aegisrun.artifacts.html_report import render_investment_html
 from aegisrun.core.domain import PolicySnapshot
-from aegisrun.harness.events import EventSource, WorkspaceEventStore
+from aegisrun.harness.events import AgentEvent, EventSource, WorkspaceEventStore
+from aegisrun.harness.invariants import default_invariants
+from aegisrun.harness.loop_control import AgentLoopHarness
+from aegisrun.harness.prompt import PromptRegistry, PromptSection
+from aegisrun.harness.requests import ModelRequestEnvelope
+from aegisrun.harness.surface import derive_surface
 from aegisrun.harness.workspace_tools import PersistentWorkspaceShell, WorkspaceFileEditor
 from aegisrun.macro.analysis import analyze_macro_snapshot, build_macro_overlay
 from aegisrun.macro.freshness import (
@@ -56,6 +61,19 @@ WorkspacePermissionMode = Literal["read-only", "workspace-write"]
 _SAFE_TEXT_ARTIFACT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\.(?:md|txt|json)$")
 _SAFE_ARTIFACT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\.(?:md|txt|json|html)$")
 _WEB_TRIGGER = re.compile(r"最新|新闻|公告|联网|搜索|检索|今天|近期")
+_SAFE_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}$")
+_INVESTMENT_AGENT_SYSTEM_PROMPT = (
+    "你是求衡（EquiSeek）投资 lead agent。每轮只返回一个 JSON 对象。"
+    "action 只能是 tool、final 或 clarify。tool 时必须使用 available_tools "
+    "中的名字并提供 arguments；final 时提供 content；clarify 仅在确实缺少"
+    "用户选择时使用 content。优先按需加载 Skill，重要事实必须来自工具观察；"
+    "不得虚构实时行情、网页、公告、指标或交易执行。遵循 context.agent_harness.plan；"
+    "需要未展示的能力时先调用 tools.search，"
+    "策略变化时用 plan.update 提交完整计划快照；不要用完全相同的参数重复调用"
+    "已成功工具。read/write/edit 只操作用户选定工作区，修改已有文件前先 read；"
+    "bash 是本轮持续会话，cwd、导出"
+    "变量和后台任务可跨调用保留，但不得绕过当前工作区权限。"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +108,7 @@ class InvestmentAgentRunRequest:
     start_date: date
     end_date: date
     adjustment: AdjustmentMode
+    run_id: str | None = None
     tushare_token: str | None = field(default=None, repr=False)
     web_search_api_key: str | None = field(default=None, repr=False)
     symbol: str | None = None
@@ -107,6 +126,8 @@ class InvestmentAgentRunRequest:
     def __post_init__(self) -> None:
         if not self.question.strip():
             raise ValueError("investment agent goal cannot be empty")
+        if self.run_id is not None and not _SAFE_RUN_ID.fullmatch(self.run_id):
+            raise ValueError("investment agent run_id must be a safe identifier")
         if self.max_steps < 1 or self.max_steps > 20:
             raise ValueError("investment agent max_steps must be between 1 and 20")
         if self.skill_selection_mode not in {"auto", "explicit"}:
@@ -313,9 +334,15 @@ class InvestmentAgentRuntime:
         *,
         on_progress: ProgressCallback | None = None,
     ) -> InvestmentAgentRunResult:
-        run_id = f"investment-{uuid4().hex}"
+        run_id = request.run_id or f"investment-{uuid4().hex}"
         paths = self.workspaces.create_run(run_id)
-        events = WorkspaceEventStore(paths.state / "events.jsonl", run_id=run_id, session_id=run_id)
+        events = WorkspaceEventStore(
+            paths.state / "events.jsonl",
+            run_id=run_id,
+            session_id=run_id,
+            invariants=default_invariants(),
+        )
+        turn_id = "turn-1"
         active = {package.summary.name: package for package in request.active_skills}
         observations: list[dict[str, Any]] = []
         tool_calls: list[str] = []
@@ -331,6 +358,8 @@ class InvestmentAgentRuntime:
             "skill_selection_mode": request.skill_selection_mode,
             "working_directory": request.working_directory,
             "workspace_permission": request.workspace_permission,
+            "turn_id": turn_id,
+            "event_log": ".state/events.jsonl",
         }
         self._save_state(paths.state / "investment-run.json", state)
         await events.append(
@@ -342,6 +371,23 @@ class InvestmentAgentRuntime:
                 "workspace": str(paths.root),
             },
             source=EventSource("runtime", actor_id="investment-lead-agent"),
+        )
+        await events.append(
+            "turn/started",
+            {"turn_id": turn_id, "goal": request.question},
+            source=EventSource("runtime", actor_id="investment-lead-agent"),
+            turn_id=turn_id,
+        )
+        await events.append(
+            "user/message",
+            {
+                "message_id": f"goal-{run_id}",
+                "role": "user",
+                "content": [{"type": "text", "text": request.question}],
+                "message_source": {"kind": "investment-agent-goal"},
+            },
+            source=EventSource("user", actor_id="desktop-user"),
+            turn_id=turn_id,
         )
         self._notify(
             on_progress,
@@ -367,6 +413,8 @@ class InvestmentAgentRuntime:
             working_directory,
             active,
         )
+        loop_harness: AgentLoopHarness
+        self._register_harness_tools(registry, lambda: loop_harness)
         allowed_tool_names = list(self._tool_names(registry))
         if request.workspace_permission == "read-only":
             allowed_tool_names = [
@@ -384,6 +432,15 @@ class InvestmentAgentRuntime:
             writable_prefixes=(str(paths.artifacts),),
             network_allowed=request.source != "demo" or bool(request.web_search_api_key),
         )
+        loop_harness = await self._initialize_loop_harness(
+            request=request,
+            registry=registry,
+            policy=policy,
+            state=state,
+            state_directory=paths.state,
+            events=events,
+            turn_id=turn_id,
+        )
         pipeline = ToolPipeline(registry, events=events)
         warning: str | None = None
         status: Literal["succeeded", "failed", "needs_input"] = "succeeded"
@@ -392,24 +449,78 @@ class InvestmentAgentRuntime:
         trace: tuple[InvestmentAgentTraceStep, ...] = ()
         try:
             for step_index in range(1, request.max_steps + 1):
-                action = await self._next_action(
-                    request,
-                    registry,
-                    active,
-                    observations,
-                    request.max_steps - step_index + 1,
-                    tuple(allowed_tool_names),
+                step_id = f"step-{step_index}"
+                await events.append(
+                    "step/started",
+                    {
+                        "step_id": step_id,
+                        "index": step_index,
+                        "remaining_steps": request.max_steps - step_index + 1,
+                    },
+                    source=EventSource("runtime", actor_id="investment-lead-agent"),
+                    turn_id=turn_id,
+                    step_id=step_id,
+                    task_id=step_id,
                 )
+                try:
+                    action, planner_mode = await self._next_action(
+                        request,
+                        registry,
+                        active,
+                        observations,
+                        request.max_steps - step_index + 1,
+                        tuple(allowed_tool_names),
+                        loop_harness,
+                        events=events,
+                        turn_id=turn_id,
+                        step_id=step_id,
+                    )
+                except Exception as error:
+                    await events.append(
+                        "step/ended",
+                        {
+                            "step_id": step_id,
+                            "index": step_index,
+                            "status": "failed",
+                            "error_type": type(error).__name__,
+                            "message": str(error)[:2_000],
+                        },
+                        source=EventSource("runtime", actor_id="investment-lead-agent"),
+                        turn_id=turn_id,
+                        step_id=step_id,
+                        task_id=step_id,
+                    )
+                    raise
                 if action.kind == "final":
                     final_answer = action.content.strip()
-                    answer_mode = "deepseek" if self.model is not None else "local"
+                    answer_mode = planner_mode
+                    await self._end_step_event(
+                        events, turn_id, step_id, step_index, "succeeded", action
+                    )
                     break
                 if action.kind == "clarify":
                     final_answer = action.content.strip() or "请补充完成研究所需的信息。"
-                    answer_mode = "deepseek" if self.model is not None else "local"
+                    answer_mode = planner_mode
                     status = "needs_input"
+                    await self._end_step_event(
+                        events, turn_id, step_id, step_index, "needs_input", action
+                    )
                     break
                 if not action.tool_name:
+                    await events.append(
+                        "step/ended",
+                        {
+                            "step_id": step_id,
+                            "index": step_index,
+                            "status": "failed",
+                            "error_type": "RuntimeError",
+                            "message": "agent tool action did not name a tool",
+                        },
+                        source=EventSource("runtime", actor_id="investment-lead-agent"),
+                        turn_id=turn_id,
+                        step_id=step_id,
+                        task_id=step_id,
+                    )
                     raise RuntimeError("agent tool action did not name a tool")
                 step = {
                     "index": step_index,
@@ -430,42 +541,124 @@ class InvestmentAgentRuntime:
                         **step,
                     },
                 )
-                try:
-                    result = await pipeline.execute(
-                        action.tool_name,
-                        action.arguments,
-                        policy,
-                        agent_id="investment-lead-agent",
-                        task_id=f"step-{step_index}",
-                    )
-                except Exception as error:
+                promoted_before = set(loop_harness.promoted_tool_names)
+                if planner_mode == "local":
+                    loop_harness.promote(action.tool_name)
+                guard = loop_harness.before_tool(action.tool_name, action.arguments)
+                if not guard.allowed:
                     step["status"] = "failed"
-                    step["detail"] = f"{type(error).__name__}: {error}"[:500]
+                    step["detail"] = f"{guard.code}: {guard.reason}"[:500]
                     observations.append(
                         {
                             "tool": action.tool_name,
                             "ok": False,
                             "error": step["detail"],
+                            "guarded": True,
                         }
+                    )
+                    await events.append(
+                        "loop/guarded",
+                        {
+                            "step_id": step_id,
+                            "tool": action.tool_name,
+                            "code": guard.code,
+                            "reason": guard.reason,
+                        },
+                        source=EventSource("runtime", actor_id="investment-lead-agent"),
+                        turn_id=turn_id,
+                        step_id=step_id,
+                        task_id=step_id,
                     )
                 else:
-                    step["status"] = "succeeded"
-                    step["detail"] = result.summary[:500]
-                    observations.append(
-                        {
-                            "tool": action.tool_name,
-                            "ok": True,
-                            "summary": result.summary,
-                            "data": result.data,
-                            "artifact_id": result.artifact_id,
-                        }
+                    try:
+                        result = await pipeline.execute(
+                            action.tool_name,
+                            action.arguments,
+                            policy,
+                            agent_id="investment-lead-agent",
+                            task_id=f"step-{step_index}",
+                        )
+                    except Exception as error:
+                        step["status"] = "failed"
+                        step["detail"] = f"{type(error).__name__}: {error}"[:500]
+                        observations.append(
+                            {
+                                "tool": action.tool_name,
+                                "ok": False,
+                                "error": step["detail"],
+                            }
+                        )
+                    else:
+                        step["status"] = "succeeded"
+                        step["detail"] = result.summary[:500]
+                        observations.append(
+                            {
+                                "tool": action.tool_name,
+                                "ok": True,
+                                "summary": result.summary,
+                                "data": result.data,
+                                "artifact_id": result.artifact_id,
+                            }
+                        )
+                    loop_harness.after_tool(
+                        action.tool_name,
+                        ok=step["status"] == "succeeded",
+                        detail=str(step["detail"]),
                     )
-                tool_calls.append(action.tool_name)
+                    if guard.code == "REPEATED_TOOL_CALL_REMINDER":
+                        observations[-1]["harness_notice"] = guard.reason
+                        await events.append(
+                            "loop/reminder",
+                            {
+                                "step_id": step_id,
+                                "tool": action.tool_name,
+                                "code": guard.code,
+                                "message": guard.reason,
+                            },
+                            source=EventSource("runtime", actor_id="investment-lead-agent"),
+                            turn_id=turn_id,
+                            step_id=step_id,
+                            task_id=step_id,
+                        )
+                    tool_calls.append(action.tool_name)
+                promoted_after = set(loop_harness.promoted_tool_names)
+                newly_promoted = sorted(promoted_after - promoted_before)
+                if newly_promoted:
+                    await events.append(
+                        "tools/promoted",
+                        {
+                            "step_id": step_id,
+                            "tools": newly_promoted,
+                            "deferred_count": len(loop_harness.deferred_tool_names),
+                            "catalog_hash": loop_harness.catalog_hash,
+                        },
+                        source=EventSource("runtime", actor_id="investment-lead-agent"),
+                        turn_id=turn_id,
+                        step_id=step_id,
+                        task_id=step_id,
+                    )
+                await events.append(
+                    "plan/revised",
+                    loop_harness.plan_snapshot(),
+                    source=EventSource("runtime", actor_id="investment-lead-agent"),
+                    turn_id=turn_id,
+                    step_id=step_id,
+                    task_id=step_id,
+                )
                 state["active_skills"] = [self._skill_reference(item) for item in active.values()]
+                state["harness"] = loop_harness.snapshot()
                 self._save_state(paths.state / "investment-run.json", state)
                 self._notify(
                     on_progress,
                     {"kind": "step-ended", "run_id": run_id, **step},
+                )
+                await self._end_step_event(
+                    events,
+                    turn_id,
+                    step_id,
+                    step_index,
+                    str(step["status"]),
+                    action,
                 )
             else:
                 warning = f"达到本轮 {request.max_steps} 步上限，已基于现有证据收束回答"
@@ -486,12 +679,14 @@ class InvestmentAgentRuntime:
                         "本轮 Skill 含有收益保证、绝对涨跌或未经授权交易执行表达，"
                         "因此未将其作为投资结论。请修订 Skill 后重试。"
                     )
+            event_log = await events.load()
             trace = self._build_trace(
                 request,
                 state,
                 observations,
                 active,
                 answer_mode=answer_mode,
+                event_log=event_log,
             )
             trace = (
                 *trace,
@@ -541,6 +736,7 @@ class InvestmentAgentRuntime:
             state["report"] = report_path.name
             state["html_report"] = html_path.name
             state["trace"] = trace_path.name
+            state["harness"] = loop_harness.snapshot()
         except Exception as error:
             status = "failed"
             final_answer = (
@@ -551,6 +747,7 @@ class InvestmentAgentRuntime:
             warning = str(error)[:500]
             state["status"] = "failed"
             state["error"] = f"{type(error).__name__}: {error}"[:2_000]
+            event_log = await events.load()
             trace = self._build_trace(
                 request,
                 state,
@@ -558,6 +755,7 @@ class InvestmentAgentRuntime:
                 active,
                 answer_mode=answer_mode,
                 failure=state["error"],
+                event_log=event_log,
             )
             try:
                 trace_path = self._write_artifact(
@@ -577,10 +775,24 @@ class InvestmentAgentRuntime:
                 "assistant/message",
                 {
                     "message_id": f"answer-{uuid4().hex}",
+                    "role": "assistant",
                     "content": [{"type": "text", "text": final_answer}],
                     "status": status,
                 },
                 source=EventSource("agent", actor_id="investment-lead-agent"),
+                turn_id=turn_id,
+            )
+            await events.append(
+                "turn/ended",
+                {"turn_id": turn_id, "status": status},
+                source=EventSource("runtime", actor_id="investment-lead-agent"),
+                turn_id=turn_id,
+            )
+            await events.append(
+                "session/ended",
+                {"status": status, "turn_id": turn_id},
+                source=EventSource("runtime", actor_id="investment-lead-agent"),
+                turn_id=turn_id,
             )
             await events.flush()
 
@@ -1241,6 +1453,153 @@ class InvestmentAgentRuntime:
         )
         return registry, search, shell
 
+    def _register_harness_tools(
+        self,
+        registry: ToolRegistry,
+        harness_provider: Callable[[], AgentLoopHarness],
+    ) -> None:
+        async def search_tools(arguments: dict[str, Any]) -> ToolResult:
+            harness = harness_provider()
+            query = str(arguments["query"])
+            matches = harness.discover(query, limit=int(arguments.get("limit", 6)))
+            return ToolResult(
+                f"按“{query}”发现并晋升 {len(matches)} 个工具",
+                {
+                    "query": query,
+                    "promoted_tools": matches,
+                    "deferred_count": len(harness.deferred_tool_names),
+                    "catalog_hash": harness.catalog_hash,
+                },
+            )
+
+        async def update_plan(arguments: dict[str, Any]) -> ToolResult:
+            raw_items = arguments["items"]
+            if not isinstance(raw_items, list):
+                raise ValueError("plan items must be an array")
+            harness = harness_provider()
+            harness.replace_plan(
+                [dict(item) for item in raw_items if isinstance(item, dict)]
+            )
+            return ToolResult("已更新本轮 Agent 执行计划", harness.plan_snapshot())
+
+        async def read_tool_result(arguments: dict[str, Any]) -> ToolResult:
+            page = harness_provider().read_externalized_result(
+                str(arguments["path"]),
+                offset=int(arguments.get("offset", 0)),
+                limit=int(arguments.get("limit", 5_000)),
+            )
+            next_offset = page["next_offset"]
+            page_summary = (
+                "已读完外置工具结果"
+                if next_offset is None
+                else f"已读取外置工具结果至字符 {next_offset}，可继续分页读取"
+            )
+            return ToolResult(page_summary, page)
+
+        self._register(
+            registry,
+            "tools.search",
+            "按名称或用途发现当前未展示的工具并晋升；支持 select:tool.name 精确选择",
+            {
+                "query": {"type": "string", "minLength": 1, "maxLength": 200},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 10},
+            },
+            search_tools,
+            required=("query",),
+        )
+        self._register(
+            registry,
+            "plan.update",
+            "用完整列表替换当前执行计划；最多一个项目可处于 in_progress",
+            {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string", "minLength": 1, "maxLength": 64},
+                            "title": {"type": "string", "minLength": 1, "maxLength": 160},
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "pending",
+                                    "in_progress",
+                                    "completed",
+                                    "blocked",
+                                    "skipped",
+                                ],
+                            },
+                            "tool": {"type": "string", "maxLength": 96},
+                            "detail": {"type": "string", "maxLength": 500},
+                        },
+                        "required": ["id", "title", "status"],
+                        "additionalProperties": False,
+                    },
+                }
+            },
+            update_plan,
+            required=("items",),
+        )
+        self._register(
+            registry,
+            "tool_results.read",
+            "按字符偏移安全分页读取 Harness 外置的完整工具结果；仅接受当前运行的 .state 引用",
+            {
+                "path": {
+                    "type": "string",
+                    "pattern": (
+                        r"^\.state/tool-results/"
+                        r"[A-Za-z0-9][A-Za-z0-9_.-]{0,191}\.json$"
+                    ),
+                },
+                "offset": {"type": "integer", "minimum": 0},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 5_000},
+            },
+            read_tool_result,
+            required=("path",),
+        )
+
+    async def _initialize_loop_harness(
+        self,
+        *,
+        request: InvestmentAgentRunRequest,
+        registry: ToolRegistry,
+        policy: PolicySnapshot,
+        state: dict[str, Any],
+        state_directory: Path,
+        events: WorkspaceEventStore,
+        turn_id: str,
+    ) -> AgentLoopHarness:
+        harness = AgentLoopHarness(
+            goal=request.question,
+            intent=request.intent,
+            tool_specs=registry.visible_specs(policy),
+            allowed_tool_names=policy.allowed_tools,
+            state_directory=state_directory,
+        )
+        state["harness"] = harness.snapshot()
+        self._save_state(state_directory / "investment-run.json", state)
+        source = EventSource("runtime", actor_id="investment-lead-agent")
+        await events.append(
+            "plan/created",
+            harness.plan_snapshot(),
+            source=source,
+            turn_id=turn_id,
+        )
+        await events.append(
+            "tools/cataloged",
+            {
+                "catalog_hash": harness.catalog_hash,
+                "promoted": list(harness.promoted_tool_names),
+                "deferred_count": len(harness.deferred_tool_names),
+            },
+            source=source,
+            turn_id=turn_id,
+        )
+        return harness
+
     async def _next_action(
         self,
         request: InvestmentAgentRunRequest,
@@ -1249,17 +1608,24 @@ class InvestmentAgentRuntime:
         observations: list[dict[str, Any]],
         remaining_steps: int,
         allowed_tool_names: tuple[str, ...],
-    ) -> InvestmentAgentAction:
+        loop_harness: AgentLoopHarness,
+        *,
+        events: WorkspaceEventStore,
+        turn_id: str,
+        step_id: str,
+    ) -> tuple[InvestmentAgentAction, Literal["local", "deepseek"]]:
         # Portfolio mutations are always parsed and executed locally. Quantities and
         # cost prices never enter a remote planner observation.
         if self.model is None or request.intent == "manage_portfolio":
-            return self._deterministic_action(request, observations, active)
+            return self._deterministic_action(request, observations, active), "local"
+        promoted_names = tuple(
+            name for name in allowed_tool_names if loop_harness.is_promoted(name)
+        )
         tools = [
             self._model_tool(spec)
-            for spec in registry.visible_specs(
-                PolicySnapshot(allowed_tools=allowed_tool_names)
-            )
+            for spec in registry.visible_specs(PolicySnapshot(allowed_tools=promoted_names))
         ]
+        projected_observations = loop_harness.project_observations(observations)
         context = {
             "intent": request.intent,
             "symbol": request.symbol,
@@ -1275,31 +1641,172 @@ class InvestmentAgentRuntime:
                 f"selected local workspace; {request.workspace_permission}; "
                 "persistent shell and file editor are sandboxed to that workspace"
             ),
+            "agent_harness": loop_harness.model_context(),
+        }
+        model_input = {
+            "goal": request.question,
+            "context": context,
+            "available_tools": tools,
+            "observations": projected_observations,
+            "active_skills": [
+                {
+                    **self._skill_reference(item),
+                    "instructions": item.instructions[:8_000],
+                }
+                for item in active.values()
+            ],
+            "remaining_steps": remaining_steps,
         }
         try:
-            action = await self.model.choose_investment_action(
-                goal=request.question,
-                context=context,
-                tools=tools,
-                observations=observations[-8:],
-                active_skills=[
-                    {
-                        **self._skill_reference(item),
-                        "instructions": item.instructions[:8_000],
-                    }
-                    for item in active.values()
-                ],
-                remaining_steps=remaining_steps,
+            action = await self._recorded_model_action(
+                model_input,
+                events=events,
+                turn_id=turn_id,
+                step_id=step_id,
             )
             if (
                 request.skill_selection_mode == "explicit"
                 and action.tool_name == "skills.activate"
                 and str(action.arguments.get("name", "")) not in active
             ):
-                return self._deterministic_action(request, observations, active)
-            return action
+                return self._deterministic_action(request, observations, active), "local"
+            return action, "deepseek"
         except ModelServiceError:
-            return self._deterministic_action(request, observations, active)
+            return self._deterministic_action(request, observations, active), "local"
+
+    async def _recorded_model_action(
+        self,
+        model_input: dict[str, Any],
+        *,
+        events: WorkspaceEventStore,
+        turn_id: str,
+        step_id: str,
+    ) -> InvestmentAgentAction:
+        if self.model is None:  # pragma: no cover - guarded by _next_action
+            raise RuntimeError("investment action model is unavailable")
+        envelope_builder = getattr(self.model, "request_envelope", None)
+        if callable(envelope_builder):
+            envelope = envelope_builder(model_input)
+            if not isinstance(envelope, ModelRequestEnvelope):
+                raise TypeError("model request_envelope returned an invalid value")
+        else:
+            prompt = PromptRegistry().assemble()
+            envelope = ModelRequestEnvelope.create(
+                provider="in-process",
+                model=type(self.model).__name__,
+                prompt=prompt,
+                messages=({"role": "user", "content": model_input},),
+                effective_config={},
+                defaults={},
+                request_body={"input": model_input, "adapter": type(self.model).__name__},
+            )
+        request_id = f"model-{uuid4().hex}"
+        credential_ref = str(getattr(self.model, "credential_ref", "in-process"))
+        surface_event_seqs = list(
+            dict.fromkeys(
+                seq
+                for message in derive_surface(await events.load())
+                for seq in message.source_event_seqs
+            )
+        )
+        source = EventSource("agent", actor_id="investment-lead-agent")
+        header = await events.append(
+            "request/header",
+            envelope.header_payload(
+                request_id,
+                credential_ref=credential_ref,
+                surface_event_seqs=surface_event_seqs,
+            ),
+            source=source,
+            turn_id=turn_id,
+            step_id=step_id,
+            task_id=step_id,
+        )
+        await events.append(
+            "model/request",
+            envelope.model_request_payload(
+                request_id,
+                credential_ref=credential_ref,
+                header_seq=header.seq,
+            ),
+            source=source,
+            turn_id=turn_id,
+            step_id=step_id,
+            task_id=step_id,
+        )
+        try:
+            prepared = getattr(self.model, "choose_prepared_investment_action", None)
+            if callable(prepared):
+                action = await prepared(envelope)
+            else:
+                action = await self.model.choose_investment_action(
+                    goal=str(model_input["goal"]),
+                    context=dict(model_input["context"]),
+                    tools=list(model_input["available_tools"]),
+                    observations=list(model_input["observations"]),
+                    active_skills=list(model_input["active_skills"]),
+                    remaining_steps=int(model_input["remaining_steps"]),
+                )
+            if not isinstance(action, InvestmentAgentAction):
+                raise TypeError("investment action model returned an invalid action")
+        except Exception as error:
+            await events.append(
+                "model/failure",
+                {
+                    "request_id": request_id,
+                    "model": envelope.model,
+                    "error_type": type(error).__name__,
+                    "message": str(error)[:2_000],
+                },
+                source=source,
+                turn_id=turn_id,
+                step_id=step_id,
+                task_id=step_id,
+            )
+            raise
+        await events.append(
+            "model/response",
+            {
+                "request_id": request_id,
+                "model": envelope.model,
+                "action": {
+                    "kind": action.kind,
+                    "tool": action.tool_name,
+                    "arguments": action.arguments,
+                    "content": action.content,
+                    "reason": action.reason,
+                },
+            },
+            source=source,
+            turn_id=turn_id,
+            step_id=step_id,
+            task_id=step_id,
+        )
+        return action
+
+    @staticmethod
+    async def _end_step_event(
+        events: WorkspaceEventStore,
+        turn_id: str,
+        step_id: str,
+        index: int,
+        status: str,
+        action: InvestmentAgentAction,
+    ) -> None:
+        await events.append(
+            "step/ended",
+            {
+                "step_id": step_id,
+                "index": index,
+                "status": status,
+                "action": action.kind,
+                "tool": action.tool_name,
+            },
+            source=EventSource("runtime", actor_id="investment-lead-agent"),
+            turn_id=turn_id,
+            step_id=step_id,
+            task_id=step_id,
+        )
 
     def _deterministic_action(
         self,
@@ -2122,6 +2629,9 @@ class InvestmentAgentRuntime:
         return {
             "skills.list": "发现可用 Skill",
             "skills.activate": "加载 Skill",
+            "tools.search": "发现并晋升工具",
+            "plan.update": "更新 Agent 执行计划",
+            "tool_results.read": "分页读取外置工具结果",
             "portfolio.snapshot": "读取候选范围",
             "portfolio.list": "读取本地持仓",
             "portfolio.upsert": "添加或更新本地持仓",
@@ -2200,6 +2710,7 @@ class InvestmentAgentRuntime:
         *,
         answer_mode: str,
         failure: str = "",
+        event_log: Sequence[AgentEvent] = (),
     ) -> tuple[InvestmentAgentTraceStep, ...]:
         trace: list[InvestmentAgentTraceStep] = [
             InvestmentAgentTraceStep(
@@ -2211,6 +2722,89 @@ class InvestmentAgentRuntime:
                 + f" · 数据区间 {request.start_date} 至 {request.end_date}",
             )
         ]
+        harness = state.get("harness", {})
+        if isinstance(harness, dict):
+            harness_events = tuple(
+                event
+                for event in event_log
+                if event.event_type
+                in {
+                    "plan/created",
+                    "plan/revised",
+                    "tools/cataloged",
+                    "tools/promoted",
+                    "loop/reminder",
+                    "loop/guarded",
+                }
+            )
+            plan_events = tuple(
+                event
+                for event in harness_events
+                if event.event_type in {"plan/created", "plan/revised"}
+            )
+            plan = (
+                dict(plan_events[-1].payload)
+                if plan_events
+                else harness.get("plan", {})
+            )
+            tool_discovery = harness.get("tool_discovery", {})
+            observation_budget = harness.get("observation_budget", {})
+            plan_items = plan.get("items", []) if isinstance(plan, dict) else []
+            completed = sum(
+                1
+                for item in plan_items
+                if isinstance(item, dict) and item.get("status") == "completed"
+            )
+            promoted_names: set[str] = set()
+            catalog_hash = ""
+            for event in harness_events:
+                payload = event.payload
+                if event.event_type == "tools/cataloged":
+                    raw_promoted = payload.get("promoted", ())
+                    if isinstance(raw_promoted, tuple):
+                        promoted_names.update(str(name) for name in raw_promoted)
+                    catalog_hash = str(payload.get("catalog_hash", ""))
+                elif event.event_type == "tools/promoted":
+                    raw_promoted = payload.get("tools", ())
+                    if isinstance(raw_promoted, tuple):
+                        promoted_names.update(str(name) for name in raw_promoted)
+                    catalog_hash = str(payload.get("catalog_hash", catalog_hash))
+            if not promoted_names and isinstance(tool_discovery, dict):
+                fallback_promoted = tool_discovery.get("promoted", [])
+                if isinstance(fallback_promoted, list):
+                    promoted_names.update(str(name) for name in fallback_promoted)
+                catalog_hash = str(tool_discovery.get("catalog_hash", catalog_hash))
+            violations = sum(
+                event.event_type == "loop/guarded" for event in harness_events
+            )
+            reminders = sum(
+                event.event_type == "loop/reminder" for event in harness_events
+            )
+            externalized = (
+                int(observation_budget.get("externalized_results", 0))
+                if isinstance(observation_budget, dict)
+                else 0
+            )
+            event_reference = ""
+            if harness_events:
+                event_reference = (
+                    f"；依据事件 #{harness_events[0].seq}-#{harness_events[-1].seq}"
+                )
+            owner = str(plan.get("owner", "runtime")) if isinstance(plan, Mapping) else "runtime"
+            trace.append(
+                InvestmentAgentTraceStep(
+                    "harness",
+                    "Agent Harness 控制面",
+                    "succeeded" if not violations else "guarded",
+                    f"计划 {completed}/{len(plan_items)} 完成（{owner} 管理）；"
+                    f"向模型晋升 {len(promoted_names)} 个工具；"
+                    f"目录 {catalog_hash[:12] or '未记录'}；"
+                    f"重复调用提醒 {reminders} 次；权限保护触发 {violations} 次；"
+                    f"外置 {externalized} 个大结果{event_reference}。",
+                    evidence_path=".state/events.jsonl" if harness_events else "",
+                    agent_name="investment-lead-agent",
+                )
+            )
         if request.attachment_context or request.attachment_warnings:
             trace.append(
                 InvestmentAgentTraceStep(
@@ -2252,6 +2846,18 @@ class InvestmentAgentRuntime:
 
         raw_steps = state.get("steps", [])
         state_steps = raw_steps if isinstance(raw_steps, list) else []
+        result_events = {
+            str(event.payload.get("call_id")): event
+            for event in event_log
+            if event.event_type == "tool/result"
+        }
+        tool_event_pairs = [
+            (event, result_events[str(event.payload.get("call_id"))])
+            for event in event_log
+            if event.event_type == "tool/call"
+            and str(event.payload.get("call_id")) in result_events
+        ]
+        tool_event_cursor = 0
         for index, observation in enumerate(observations):
             state_step = state_steps[index] if index < len(state_steps) else {}
             reason = str(state_step.get("reason", "")) if isinstance(state_step, dict) else ""
@@ -2261,6 +2867,15 @@ class InvestmentAgentRuntime:
             if reason:
                 summary = f"选择原因：{reason}；观察：{summary}"
             tool_name = str(observation.get("tool", ""))
+            evidence_path = ""
+            for pair_index in range(tool_event_cursor, len(tool_event_pairs)):
+                call_event, result_event = tool_event_pairs[pair_index]
+                if str(call_event.payload.get("tool", "")) != tool_name:
+                    continue
+                summary += f"；依据事件 #{call_event.seq}/#{result_event.seq}"
+                evidence_path = ".state/events.jsonl"
+                tool_event_cursor = pair_index + 1
+                break
             trace.append(
                 InvestmentAgentTraceStep(
                     "tool",
@@ -2268,6 +2883,7 @@ class InvestmentAgentRuntime:
                     "succeeded" if observation.get("ok") else "failed",
                     summary,
                     tool_name=tool_name,
+                    evidence_path=evidence_path,
                 )
             )
             data = observation.get("data", {})
@@ -2400,6 +3016,8 @@ class InvestmentAgentRuntime:
 
 
 class DeepSeekInvestmentActionModel:
+    credential_ref = "deepseek-api-key"
+
     def __init__(self, client: DeepSeekClient) -> None:
         self.client = client
 
@@ -2413,7 +3031,7 @@ class DeepSeekInvestmentActionModel:
         active_skills: list[dict[str, str]],
         remaining_steps: int,
     ) -> InvestmentAgentAction:
-        payload = {
+        payload: dict[str, Any] = {
             "goal": goal,
             "context": context,
             "available_tools": tools,
@@ -2421,27 +3039,58 @@ class DeepSeekInvestmentActionModel:
             "active_skills": active_skills,
             "remaining_steps": remaining_steps,
         }
-        data = await self.client.complete_json(
-            [
-                {
-                    "role": "system",
-                    "content": (
-                        "你是求衡（EquiSeek）投资 lead agent。每轮只返回一个 JSON 对象。"
-                        "action 只能是 tool、final 或 clarify。tool 时必须使用 available_tools "
-                        "中的名字并提供 arguments；final 时提供 content；clarify 仅在确实缺少"
-                        "用户选择时使用 content。优先按需加载 Skill，重要事实必须来自工具观察；"
-                        "不得虚构实时行情、网页、公告、指标或交易执行。read/write/edit 只操作"
-                        "用户选定工作区，修改已有文件前先 read；bash 是本轮持续会话，cwd、导出"
-                        "变量和后台任务可跨调用保留，但不得绕过当前工作区权限。"
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
-                },
-            ],
-            max_tokens=1_000,
+        return await self.choose_prepared_investment_action(self.request_envelope(payload))
+
+    def request_envelope(self, payload: dict[str, Any]) -> ModelRequestEnvelope:
+        registry = PromptRegistry()
+        registry.section(
+            PromptSection(
+                "investment-agent:identity",
+                0,
+                _INVESTMENT_AGENT_SYSTEM_PROMPT,
+                "investment-runtime",
+            )
         )
+        raw_tools = payload.get("available_tools", [])
+        if isinstance(raw_tools, list):
+            for item in raw_tools:
+                if isinstance(item, dict):
+                    registry.tool(item, source="investment-tool-registry")
+        prompt = registry.assemble()
+        messages = (
+            {
+                "role": "user",
+                "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+            },
+        )
+        request_body = {
+            "model": self.client.config.model,
+            "thinking": {"type": "disabled"},
+            "temperature": 0,
+            "max_tokens": 1_000,
+            "response_format": {"type": "json_object"},
+            "messages": [{"role": "system", "content": prompt.system}, *messages],
+        }
+        return ModelRequestEnvelope.create(
+            provider=self.client.config.provider,
+            model=self.client.config.model,
+            prompt=prompt,
+            messages=messages,
+            effective_config={
+                "thinking": "disabled",
+                "temperature": 0,
+                "max_tokens": 1_000,
+                "response_format": "json_object",
+            },
+            defaults={},
+            request_body=request_body,
+        )
+
+    async def choose_prepared_investment_action(
+        self,
+        envelope: ModelRequestEnvelope,
+    ) -> InvestmentAgentAction:
+        data = await self.client.complete_json_prepared(envelope)
         action = str(data.get("action", ""))
         if action not in {"tool", "final", "clarify"}:
             raise ModelServiceError("DeepSeek 返回了未知 Agent 动作")

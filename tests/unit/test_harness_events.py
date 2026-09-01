@@ -63,6 +63,50 @@ async def test_candidate_invariant_failure_does_not_append(tmp_path: Path) -> No
 
 
 @pytest.mark.asyncio
+async def test_turn_and_step_lifecycle_must_be_paired_before_session_ends(
+    tmp_path: Path,
+) -> None:
+    store = WorkspaceEventStore(
+        tmp_path / "events.jsonl", run_id="run-1", invariants=default_invariants()
+    )
+    source = EventSource("runtime", actor_id="lead-agent")
+    await store.append(
+        "turn/started",
+        {"turn_id": "turn-1"},
+        source=source,
+        turn_id="turn-1",
+    )
+    await store.append(
+        "step/started",
+        {"step_id": "step-1"},
+        source=source,
+        turn_id="turn-1",
+        step_id="step-1",
+    )
+    with pytest.raises(InvariantError, match="open step"):
+        await store.append(
+            "turn/ended",
+            {"turn_id": "turn-1"},
+            source=source,
+            turn_id="turn-1",
+        )
+    await store.append(
+        "step/ended",
+        {"step_id": "step-1", "status": "succeeded"},
+        source=source,
+        turn_id="turn-1",
+        step_id="step-1",
+    )
+    await store.append(
+        "turn/ended",
+        {"turn_id": "turn-1", "status": "succeeded"},
+        source=source,
+        turn_id="turn-1",
+    )
+    await store.append("session/ended", {"status": "succeeded"}, source=source)
+
+
+@pytest.mark.asyncio
 async def test_incomplete_tail_is_reported_as_corruption(tmp_path: Path) -> None:
     path = tmp_path / "events.jsonl"
     path.write_text(json.dumps({"seq": 1}), encoding="utf-8")
