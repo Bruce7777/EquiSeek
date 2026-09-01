@@ -2,7 +2,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-[Project website](https://bruce7777.github.io/EquiSeek/en/) · [Gitee mirror](https://gitee.com/luoyc619/EquiSeek) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
+[Project website](https://bruce7777.github.io/EquiSeek/en/) · [Gitee mirror](https://gitee.com/luoyc619/EquiSeek) · [Download the current Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.6) · [Unsigned installation guide](docs/installing-unsigned-desktop.md)
 
 > Technology for everyone: professional investment-research tools should not be limited to institutions.
 
@@ -108,15 +108,15 @@ Artifacts are written under `apps/desktop/out/make/`: an unsigned ZIP on macOS a
 
 ## Download and install the unsigned Alpha
 
-Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
+Non-developer testers can download the current prebuilt Alpha from [GitHub Releases](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.6). A valid Alpha Release must contain all three assets plus `SHA256SUMS`:
 
 > The Gitee mirror currently provides source access. All three installers exceed Gitee's 100 MB per-attachment limit for regular projects, so prebuilt Alpha packages remain on GitHub Releases.
 
 | Platform | Asset |
 | --- | --- |
-| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-arm64-0.2.0-alpha.5-unsigned.zip) |
-| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-x64-0.2.0-alpha.5-unsigned.zip) |
-| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-Windows-x64-0.2.0-alpha.5-unsigned-Setup.exe) |
+| Apple Silicon Mac | [Download arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-macOS-arm64-0.2.0-alpha.6-unsigned.zip) |
+| Intel Mac | [Download x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-macOS-x64-0.2.0-alpha.6-unsigned.zip) |
+| Windows 10/11 x64 | [Download x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-Windows-x64-0.2.0-alpha.6-unsigned-Setup.exe) |
 
 If the Releases page has no matching assets, the build has not completed—do not download an arbitrary source archive and treat it as an installer. These Alpha packages are not signed or notarized: macOS Gatekeeper and Windows SmartScreen can warn or block them, antivirus software may inspect the bundled Python sidecar, and managed devices may forbid installation completely. Download only from this repository, verify `SHA256SUMS`, and follow the [unsigned desktop installation guide](docs/installing-unsigned-desktop.md). A signed stable release can be added after certificates are available; see [Desktop releases](docs/releasing-desktop.md).
 

@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-[项目官网](https://bruce7777.github.io/EquiSeek/) · [Gitee 国内镜像](https://gitee.com/luoyc619/EquiSeek) · [下载当前 Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) · [未签名安装指南](docs/installing-unsigned-desktop.md)
+[项目官网](https://bruce7777.github.io/EquiSeek/) · [Gitee 国内镜像](https://gitee.com/luoyc619/EquiSeek) · [下载当前 Alpha](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.6) · [未签名安装指南](docs/installing-unsigned-desktop.md)
 
 > 科技平权：让专业投研工具不再只属于机构。
 
@@ -108,15 +108,15 @@ make desktop-package
 
 ## 下载并安装未签名 Alpha
 
-不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.5) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
+不会编程的试用者可从[当前 Alpha Release](https://github.com/Bruce7777/EquiSeek/releases/tag/v0.2.0-alpha.6) 下载已经编译好的软件。一个可用的 Alpha Release 必须同时包含以下三个安装包和 `SHA256SUMS`：
 
 > Gitee 国内镜像当前用于源码访问。三个安装包均超过 Gitee 普通项目 100MB 的单附件上限，因此编译好的 Alpha 仍由 GitHub Releases 分发。
 
 | 平台 | 文件名 |
 | --- | --- |
-| Apple Silicon Mac | [下载 arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-arm64-0.2.0-alpha.5-unsigned.zip) |
-| Intel Mac | [下载 x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-macOS-x64-0.2.0-alpha.5-unsigned.zip) |
-| Windows 10/11 x64 | [下载 x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.5/EquiSeek-Windows-x64-0.2.0-alpha.5-unsigned-Setup.exe) |
+| Apple Silicon Mac | [下载 arm64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-macOS-arm64-0.2.0-alpha.6-unsigned.zip) |
+| Intel Mac | [下载 x64 ZIP](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-macOS-x64-0.2.0-alpha.6-unsigned.zip) |
+| Windows 10/11 x64 | [下载 x64 Setup.exe](https://github.com/Bruce7777/EquiSeek/releases/download/v0.2.0-alpha.6/EquiSeek-Windows-x64-0.2.0-alpha.6-unsigned-Setup.exe) |
 
 如果 Releases 页面没有这些文件，说明构建尚未完成；不要把 GitHub 自动生成的 Source code 压缩包当作安装包。本阶段没有 Apple/Windows 证书，macOS Gatekeeper 和 Windows SmartScreen 可能警告或阻止启动，杀毒软件也可能重点扫描内嵌的 Python sidecar，企业管理设备甚至可能完全禁止安装。请只从本仓库下载、先核对 `SHA256SUMS`，并按[未签名桌面版安装指南](docs/installing-unsigned-desktop.md)操作。未来取得证书后可另行发布签名稳定版；详见[桌面发布](docs/releasing-desktop.md)。
 
