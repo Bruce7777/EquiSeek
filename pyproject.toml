@@ -34,7 +34,7 @@ dependencies = [
   "pyyaml>=6,<7",
   "python-json-logger>=3.2,<4",
   "rich>=13.9,<15",
-  "sqlalchemy>=2.0,<2.1",
+  "sqlalchemy>=2.0,<2.2",
   "typer>=0.15,<1",
   "uvicorn[standard]>=0.34,<1",
 ]
